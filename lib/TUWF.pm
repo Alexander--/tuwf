@@ -300,7 +300,7 @@ sub _handle_request {
       $sqlt += $_->[1]*1000 for (@{$self->{_TUWF}{DB}{queries}});
     }
 
-    $self->log(sprintf('%4dms (SQL:%4dms,%3d qs)', $time, $sqlt, $sqlc, $self->reqURI));
+    $self->log(sprintf('%4dms (SQL:%4dms,%3d qs)', $time, $sqlt, $sqlc));
   }
 }
 
