@@ -36,19 +36,16 @@ sub kv_validate {
 
     # check each value and add it to %ret
     for (@values) {
-      my $valid = _validate($_, $templates, $f);
-      if(!ref $valid) {
-        $_ = $valid;
-        next;
-      }
-      push @err, [ $f->{$src}, $$valid, $f->{$$valid} ];
+      my $errfield = _validate($_, $templates, $f);
+      next if !$errfield;
+      push @err, [ $f->{$src}, $errfield, $f->{$errfield} ];
       last;
     }
     $ret{$f->{$src}} = $f->{multi} ? \@values : $values[0];
 
     # check mincount/maxcount
     push @err, [ $f->{$src}, 'mincount', $f->{mincount} ] if $f->{mincount} && @values < $f->{mincount};
-    push @err, [ $f->{$src}, 'maxcount', $f->{maxcount} ] if $f->{maxcount} && @values < $f->{maxcount};
+    push @err, [ $f->{$src}, 'maxcount', $f->{maxcount} ] if $f->{maxcount} && @values > $f->{maxcount};
   }
 
   $ret{_err} = \@err if @err;
@@ -57,8 +54,7 @@ sub kv_validate {
 
 
 # Internal function used by kv_validate, checks one value on the validation
-# rules, returns scalarref containing the failed rule on error, new value
-# otherwise
+# rules, the name of the failed rule on error, undef otherwise
 sub _validate { # value, \%templates, \%rules
   my($v, $t, $r) = @_;
 
@@ -68,33 +64,35 @@ sub _validate { # value, \%templates, \%rules
 
   # remove whitespace
   if($v && $r->{rmwhitespace}) {
-    $v =~ s/\r//g;
-    $v =~ s/^[\s\n]+//;
-    $v =~ s/[\s\n]+$//;
+    $_[0] =~ s/\r//g;
+    $_[0] =~ s/^[\s\n]+//;
+    $_[0] =~ s/[\s\n]+$//;
+    $v = $_[0]
   }
 
   # empty
   if(!defined($v) || length($v) < 1) {
-    return \'required' if $r->{required};
-    return exists $r->{default} ? $r->{default} : $v;
+    return 'required' if $r->{required};
+    $_[0] = $r->{default} if exists $r->{default};
+    return undef;
   }
 
   # length
-  return \'minlength' if $r->{minlength} && length $v < $r->{minlength};
-  return \'maxlength' if $r->{maxlength} && length $v > $r->{maxlength};
+  return 'minlength' if $r->{minlength} && length $v < $r->{minlength};
+  return 'maxlength' if $r->{maxlength} && length $v > $r->{maxlength};
   # min/max
-  return \'min'       if defined($r->{min}) && (!looks_like_number($v) || $v < $r->{min});
-  return \'max'       if defined($r->{max}) && (!looks_like_number($v) || $v > $r->{max});
+  return 'min'       if defined($r->{min}) && (!looks_like_number($v) || $v < $r->{min});
+  return 'max'       if defined($r->{max}) && (!looks_like_number($v) || $v > $r->{max});
   # enum
-  return \'enum'      if $r->{enum} && !grep $_ eq $v, @{$r->{enum}};
+  return 'enum'      if $r->{enum} && !grep $_ eq $v, @{$r->{enum}};
   # regex
-  return \'regex'     if $r->{regex} && (ref($r->{regex}) eq 'ARRAY' ? ($v !~ m/$r->{regex}[0]/) : ($v !~  m/$r->{regex}/));
+  return 'regex'     if $r->{regex} && (ref($r->{regex}) eq 'ARRAY' ? ($v !~ m/$r->{regex}[0]/) : ($v !~  m/$r->{regex}/));
   # template
-  return \'template'  if $r->{template} && ref($v = _validate($v, $t, $t->{$r->{template}}));
+  return 'template'  if $r->{template} && _validate($_[0], $t, $t->{$r->{template}});
   # function
-  return \'func'      if $r->{func} && !$r->{func}[0]->($v);
+  return 'func'      if $r->{func} && (ref($r->{func}) eq 'ARRAY' ? !$r->{func}[0]->($_[0]) : !$r->{func}->($_[0]));
   # passed validation
-  return $v;
+  return undef;
 }
 
 
