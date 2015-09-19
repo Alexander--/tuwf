@@ -16,6 +16,11 @@ Module::Build->new(
     'FCGI'            => 0,
     'DBI'             => 0,
   },
+  meta_merge => {
+    resources => {
+      repository => 'http://g.blicky.net/tuwf.git/'
+    },
+  },
   create_makefile_pl => 'traditional',
 )->create_build_script;
 
