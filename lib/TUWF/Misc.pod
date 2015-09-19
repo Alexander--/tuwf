@@ -60,7 +60,7 @@ represent multiple values. This function is rarely used directly,
 C<formValidate()> does everything you need when validating common input data.
 
 I<sources> is a hashref explaining where the values should be fetched from.
-Each key in the hash represents the I<name> of the source, and it's value is a
+Each key in the hash represents the I<name> of the source, and its value is a
 subroutine reference. This subroutine should accept one argument: the name of
 the field, and is expected return a list of values, or an empty list if there
 are no values with that key. The following example defines a source by the name
@@ -120,15 +120,6 @@ Number. Minimum length of the value.
 Arrayref. The value must be equal to any of the strings in the array. Note that
 even though a string comparison is used, this works fine numbers as well.
 
-=item max
-
-Number. The value must be lower than the indicated number (using numeric
-comparison). This option implies that the value must be a number.
-
-=item min
-
-Number. See I<max>.
-
 =item regex
 
 Validate the value against a regular expression. For identification, this
@@ -139,18 +130,53 @@ therefore be used in your code.
 
 =item func
 
-Subroutine reference. Validate the value against a function. The subroutine
-should return false if the value is invalid. Since the actual value variable is
-passed to the subroutine, it is allowed to modify it in-place. This can be
-useful for normalizing or de-serializing values. This constraint is always
-executed last. This option can also be set to an arrayref, which works the same
-as with the I<regex> option.
+Subroutine reference. Validate the value against a function. The subroutine is
+passed two arguments: The value, and a hash reference with the I<fields> in the
+scope that the I<func> is defined. The subroutine should return false if the
+value is invalid, true otherwise. The value argument is passed as a reference,
+and may be modified in-place to perform normalization. This option can also be
+set to an arrayref, which works the same as with the I<regex> option. This
+constraint is only executed after the other constraints have been validated. So
+the subroutine is not called if, for example, the value is empty and the
+I<required> flag is set.
+
+The extra I<fields> argument can be used to read additional information for
+validation. For example,
+
+  { func => sub { $_[0] =~ /^$_[1]{prefix}/ },
+    prefix => 'hello' }
+
+The subroutine verifies that the value is prefixed by the value of the
+I<prefix> field, which is passed to the subroutine as second argument.
 
 =item template
 
 String, refers to a key in the I<templates> hash. Validates the value against
 the options in I<%{$templates{$string}}>, which may contain any of the above
 mentioned options (except <source name>).
+
+When a template contains a I<func> field, the fields that are passed to the
+subroutine only include the fields that are specified in the template options.
+Using the example above, the following will not work as expected:
+
+  $templates{prefix} = { func => sub { $_[0] =~ /^$_[1]{prefix} } };
+  # In the field definitions
+  { template => 'prefix', prefix => 'hello' }
+
+In this example, the only field that is passed to the subroutine is the 'func'
+field that is in the template definition itself. The subroutine has no access
+to 'prefix' field that is defined outside of the template. To work around this
+issue, a special I<inherit> option exists to allow the template to inherit
+certain fields from the parent scope. The template definition can be changed as
+follows:
+
+  $templates{prefix} = {
+    func => sub { $_[0] =~ /^$_[1]{prefix} },
+    inherit => ['prefix'],
+  };
+
+This causes the 'prefix' field from the user of the template to be passed into
+the context of the template itself, so the subroutine can access it.
 
 =item multi
 
@@ -179,7 +205,47 @@ an arrayref where each item represents an invalid field. Each invalid field is
 represented again by an arrayref containing three items: the name of the field,
 the option that caused it to fail and the value of that option.
 
-Example:
+The following templates are provided by default. These templates can be safely
+overridden with the I<templates> argument to C<kv_validate> or removed
+completely by setting the template to C<undef>.
+
+=over
+
+=item num
+
+The value must be a (JSON-like) number. Two extra fields are available when
+this template is used: I<min> to specify the lower bound on the number, and
+I<max> the upper bound. This template automatically coorces the value into a
+Perl number.
+
+=item int
+
+Similar to the I<num> template, except the value must be a whole number, no
+fractions or exponents are allowed.
+
+=item uint
+
+Similar to the I<int> template, but the number must be positive.
+
+=item ascii
+
+The value must consist entirely of printable ASCII characters.
+
+=item email
+
+The value must be a valid e-mail address. Note that this is just simple
+validation using a regular expression. A valid e-mail address in this context
+does not imply that the email exists, or that all mail clients or servers will
+accept it. For more precise validation, there's always L<Data::Validate::Email>
+and L<Email::Address>.
+
+=item weburl
+
+The value must be a valid HTTP or HTTPS URL.
+
+=back
+
+Usage example:
 
   my $r = kv_validate(
     # sources
@@ -198,7 +264,7 @@ Example:
     ],
   );
 
-  # $r will look something like:
+  # Depending on the input, $r may look something like:
   {
     name => 'John Doe',
     age => 28,

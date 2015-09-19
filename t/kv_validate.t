@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use utf8;
 
 my @tests;
 my %templates;
@@ -47,35 +48,6 @@ BEGIN{@tests=(
   { param => 'name' },
   [ name => '  ' ],
   { name => '', _err => [[ 'name', 'required', 1 ]] },
-
-  # min / max
-  { param => 'age', min => 0, max => 0 },
-  [ age => 0 ],
-  { age => 0 },
-
-  { param => 'age', min => 0, max => 0 },
-  [ age => 1 ],
-  { age => 1, _err => [[ 'age', 'max', 0 ]] },
-
-  { param => 'age', min => 0, max => 0 },
-  [ age => 0.5 ],
-  { age => 0.5, _err => [[ 'age', 'max', 0 ]] },
-
-  { param => 'age', min => 0, max => 0 },
-  [ age => -1 ],
-  { age => -1, _err => [[ 'age', 'min', 0 ]] },
-
-  { param => 'age', min => 0, max => 1000 },
-  [ age => '1e3' ],
-  { age => '1e3' },
-
-  { param => 'age', min => 0, max => 1000 },
-  [ age => '1e4' ],
-  { age => '1e4', _err => [[ 'age', 'max', 1000 ]] },
-
-  { param => 'age', min => 0, max => 0 },
-  [ age => 'x' ],
-  { age => 'x', _err => [[ 'age', 'min', 0 ]] },
 
   # minlength / maxlength
   { param => 'msg', minlength => 2 },
@@ -132,9 +104,9 @@ BEGIN{@tests=(
   [ board => '' ],
   { board => [''], _err => [[ 'board', 'required', 1 ]] },
 
-  { param => 'board', multi => 1, min => 1 },
+  { param => 'board', multi => 1, template => 'int', min => 1 },
   [ board => 0 ],
-  { board => [0], _err => [[ 'board', 'min', 1 ]] },
+  { board => [0], _err => [[ 'board', 'template', 'int' ]] },
 
   { param => 'board', multi => 1, maxcount => 1 },
   [ board => 1 ],
@@ -172,16 +144,16 @@ BEGIN{@tests=(
   )},
 
   # func
-  do { my $f = sub { $_[0] =~ y/a-z/A-Z/; $_[0] =~ /^X/ }; (
-  { param => 't', func => $f },
+  do { my $f = sub { $_[0] =~ y/a-z/A-Z/; $_[0] =~ /^$_[1]{start}/ }; (
+  { param => 't', func => $f, start => 'X' },
   [ t => 'xyz' ],
   { t => 'XYZ' },
 
-  { param => 't', func => $f },
+  { param => 't', func => $f, start => 'X' },
   [ t => 'zyx' ],
   { t => 'ZYX', _err => [[ 't', 'func', $f ]] },
 
-  { param => 't', func => [$f,1,2,3] },
+  { param => 't', func => [$f,1,2,3], start => 'X' },
   [ t => 'zyx' ],
   { t => 'ZYX', _err => [[ 't', 'func', [$f,1,2,3] ]] },
   )},
@@ -190,11 +162,12 @@ BEGIN{@tests=(
   do {
     $templates{hex} = { regex => qr/^[0-9a-f]+$/i };
     $templates{crc32} = { template => 'hex', minlength => 8, maxlength => 8 };
+    $templates{prefix} = { func => sub { $_[0] =~ /^$_[1]{prefix}/ }, inherit => ['prefix'] };
   ()},
   { param => 'crc', template => 'hex' },
   [ crc => '12345678' ],
   { crc => '12345678' },
-  
+
   { param => 'crc', template => 'crc32' },
   [ crc => '12345678' ],
   { crc => '12345678' },
@@ -206,6 +179,122 @@ BEGIN{@tests=(
   { param => 'crc', template => 'crc32' },
   [ crc => '123456789' ],
   { crc => '123456789', _err => [[ 'crc', 'template', 'crc32' ]] },
+
+  { param => 'x', template => 'prefix', prefix => 'he' },
+  [ x => 'hello world' ],
+  { x => 'hello world' },
+
+  { param => 'x', template => 'prefix', prefix => 'he' },
+  [ x => 'hullo' ],
+  { x => 'hullo', _err => [[ 'x', 'template', 'prefix' ]] },
+
+  # num / int / uint templates
+  { param => 'age', template => 'num' },
+  [ age => 0 ],
+  { age => 0 },
+
+  { param => 'age', template => 'num' },
+  [ age => '0.5' ],
+  { age => 0.5 },
+
+  { param => 'age', template => 'num' },
+  [ age => '0.5e3' ],
+  { age => 500 },
+
+  { param => 'age', template => 'num' },
+  [ age => '-0.5E-3' ],
+  { age => -0.0005 },
+
+  { param => 'age', template => 'int' },
+  [ age => '0.5e10' ],
+  { age => '0.5e10', _err => [[ 'age', 'template', 'int' ]] },
+
+  { param => 'age', template => 'num' },
+  [ age => '0600' ],
+  { age => '0600', _err => [[ 'age', 'template', 'num' ]] },
+
+  { param => 'age', template => 'uint' },
+  [ age => '50' ],
+  { age => 50 },
+
+  { param => 'age', template => 'uint' },
+  [ age => '-1' ],
+  { age => -1, _err => [[ 'age', 'template', 'uint' ]] },
+
+  { param => 'age', template => 'num', min => 0, max => 0 },
+  [ age => '0' ],
+  { age => 0 },
+
+  { param => 'age', template => 'num', max => 0 },
+  [ age => '0.5' ],
+  { age => 0.5, _err => [[ 'age', 'template', 'num' ]] },
+
+  { param => 'age', template => 'int', max => 0 },
+  [ age => 1 ],
+  { age => 1, _err => [[ 'age', 'template', 'int' ]] },
+
+  { param => 'age', template => 'uint', max => 0 },
+  [ age => 1 ],
+  { age => 1, _err => [[ 'age', 'template', 'uint' ]] },
+
+  { param => 'age', template => 'num', min => 1 },
+  [ age => 0 ],
+  { age => 0, _err => [[ 'age', 'template', 'num' ]] },
+
+  { param => 'age', template => 'int', min => 1 },
+  [ age => 0 ],
+  { age => 0, _err => [[ 'age', 'template', 'int' ]] },
+
+  { param => 'age', template => 'uint', min => 1 },
+  [ age => 0 ],
+  { age => 0, _err => [[ 'age', 'template', 'uint' ]] },
+
+  # email template
+  (map +(
+    { param => 'mail', template => 'email' },
+    [ mail => $_->[1] ],
+    { mail => $_->[1], $_->[0] ? () : (_err => [[ 'mail', 'template', 'email' ]]) },
+  ),
+    [ 0, 'abc.com' ],
+    [ 0, 'abc@localhost' ],
+    [ 0, 'abc@10.0.0.' ],
+    [ 0, 'abc@256.0.0.1' ],
+    [ 0, '<whoami>@blicky.net' ],
+    [ 0, 'a @a.com' ],
+    [ 0, 'a"@a.com' ],
+    [ 0, 'a@[:]' ],
+    [ 0, 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@xxxxxxxxxxxxxxxxxxxx.xxxxxxxxxxxxxxxxxxxxxxxx.xxxxx' ],
+    [ 1, 'a@a.com' ],
+    [ 1, 'a@a.com.' ],
+    [ 1, 'a@127.0.0.1' ],
+    [ 1, 'a@[::1]' ],
+    [ 1, 'é@yörhel.nl' ],
+    [ 1, 'a+_0-c@yorhel.nl' ],
+    [ 1, 'é@x-y_z.example' ],
+    [ 1, 'abc@x-y_z.example' ],
+  ),
+
+  # weburl template
+  (map +(
+    { param => 'url', template => 'weburl' },
+    [ url => $_->[1] ],
+    { url => $_->[1], $_->[0] ? () : (_err => [[ 'url', 'template', 'weburl' ]]) },
+  ),
+    [ 0, 'http' ],
+    [ 0, 'http://' ],
+    [ 0, 'http:///' ],
+    [ 0, 'http://x/' ],
+    [ 0, 'http://x/' ],
+    [ 0, 'http://256.0.0.1/' ],
+    [ 0, 'http://blicky.net:050/' ],
+    [ 0, 'ftp//blicky.net/' ],
+    [ 1, 'http://blicky.net/' ],
+    [ 1, 'http://blicky.net:50/' ],
+    [ 1, 'https://blicky.net/' ],
+    [ 1, 'https://[::1]:80/' ],
+    [ 1, 'https://l-n.x_.example.com/' ],
+    [ 1, 'https://blicky.net/?#Who\'d%20ever%22makeaurl_like-this/!idont.know' ],
+  ),
 )}
 
 use Test::More tests => 1+@tests/3;
@@ -219,5 +308,9 @@ sub getfield {
 
 for my $i (0..$#tests/3) {
   my($fields, $params, $exp) = ($tests[$i*3], $tests[$i*3+1], $tests[$i*3+2]);
-  is_deeply(kv_validate({ param => sub { getfield($_[0], $params) } }, \%templates, [$fields]), $exp, 'Test '.($i+1));
+  is_deeply(
+    kv_validate({ param => sub { getfield($_[0], $params) } }, \%templates, [$fields]),
+    $exp,
+    sprintf '%s = %s', $fields->{param}, join ',', getfield($fields->{param}, $params)
+  );
 }
