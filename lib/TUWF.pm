@@ -232,7 +232,7 @@ sub _handle_request {
     return 1 if $self->{_TUWF}{pre_request_handler} && !$self->{_TUWF}{pre_request_handler}->($self);
 
     # find the handler
-    my $loc = $self->reqPath;
+    (my $loc = $self->reqPath) =~ s/^\///;
     study $loc;
     my $han = $self->{_TUWF}{error_404_handler};
     my @args;

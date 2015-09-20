@@ -240,10 +240,10 @@ Note that all submodules must be in the same parent directory in C<@INC>.
 
 Maps a URI to a function. The I<regex> is matched to L<reqPath()|TUWF::Request>
 and must match the path from the begin to the end.  (That is, the regex is used
-between C<^> and C<$> marks). Since C<reqPath()> does not contain a leading
-C</> character, these should also be omitted in the regexes. It is common to
-use the C<qr{}> operator to quote the regex, which prevents you from having to
-escape slashes in the path as would be required with C<qr//>.
+between C<^> and C<$> marks). The leading slash of the path is removed before
+matching, so these should be omitted in the regexes. It is common to use the
+C<qr{}> operator to quote the regex, which prevents you from having to escape
+slashes in the path as would be required with C<qr//>.
 
 All registered regexes are matched against any incoming URI, and the subroutine
 corresponding to the first matched regex will be called to handle the request.

@@ -128,13 +128,18 @@ have been sent by the client.
 
 =head2 reqPath()
 
-Returns the path part of the current page, relative to the I<base URI>. Does
-not include a leading slash.
+Returns the path part of the current page, relative to the I<base URI>.
+Includes a leading slash.
 
 =head2 reqBaseURI()
 
 Returns the I<base URI> of the current page. That is, C<http(s)://> plus
 hostname. Does not include a trailing slash.
+
+=head2 reqQuery()
+
+Returns the query string part of the current page, including leading question
+mark. Returns an empty string if the current page does not have a query part.
 
 =head2 reqURI()
 

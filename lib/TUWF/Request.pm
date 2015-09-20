@@ -10,7 +10,7 @@ use Carp 'croak';
 our $VERSION = '0.2';
 our @EXPORT = qw|
   reqInit reqGet reqPost reqParam reqUploadMIME reqUploadRaw reqSaveUpload
-  reqCookie reqMethod reqHeader reqPath reqBaseURI reqURI reqHost reqIP
+  reqCookie reqMethod reqHeader reqPath reqQuery reqBaseURI reqURI reqHost reqIP
 |;
 
 
@@ -255,9 +255,9 @@ sub reqHeader {
 }
 
 
-# returns the path part of the current URI, excluding the leading slash
+# returns the path part of the current URI, including the leading slash
 sub reqPath {
-  (my $u = ($ENV{REQUEST_URI}||'')) =~ s{^/+}{};
+  (my $u = ($ENV{REQUEST_URI}||'')) =~ s{\?.*$}{};
   return decode_utf8 $u, 1;
 }
 
@@ -268,10 +268,15 @@ sub reqBaseURI {
 }
 
 
+sub reqQuery {
+  my $u = $ENV{QUERY_STRING} ? '?'.$ENV{QUERY_STRING} : '';
+  return decode_utf8 $u, 1;
+}
+
+
 sub reqURI {
   my $s = shift;
-  my $u = $ENV{QUERY_STRING} ? '?'.$ENV{QUERY_STRING} : '';
-  return $s->reqBaseURI().'/'.$s->reqPath().decode_utf8($u, 1);
+  return $s->reqBaseURI().$s->reqPath().$s->reqQuery();
 }
 
 
