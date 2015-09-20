@@ -236,7 +236,7 @@ sub reqMethod {
 #   case-insensitive
 sub reqHeader {
   my($self, $name) = @_;
-  if(@_ == 1) {
+  if(@_ == 2) {
     (my $v = uc $_[1]) =~ tr/-/_/;
     return $ENV{"HTTP_$v"}||'';
   } else {
