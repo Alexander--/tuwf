@@ -7,3 +7,4 @@
 ^MANIFEST\.SKIP$
 \.tar\.gz$
 ^MYMETA.yml$
+^MYMETA\.json$

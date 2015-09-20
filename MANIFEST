@@ -1,6 +1,6 @@
 Build.PL
-COPYING
 ChangeLog
+COPYING
 examples/multifile.pl
 examples/MyWebsite/ErrorPages.pm
 examples/MyWebsite/InfoDump.pm
@@ -18,8 +18,9 @@ lib/TUWF/Response.pm
 lib/TUWF/Response.pod
 lib/TUWF/XML.pm
 lib/TUWF/XML.pod
-MANIFEST			This list of files
-README
 Makefile.PL
-META.yml
+MANIFEST			This list of files
 META.json
+META.yml
+README
+t/kv_validate.t
