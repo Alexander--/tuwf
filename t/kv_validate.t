@@ -163,6 +163,9 @@ BEGIN{@tests=(
     $templates{hex} = { regex => qr/^[0-9a-f]+$/i };
     $templates{crc32} = { template => 'hex', minlength => 8, maxlength => 8 };
     $templates{prefix} = { func => sub { $_[0] =~ /^$_[1]{prefix}/ }, inherit => ['prefix'] };
+    $templates{bool} = { required => 0, default => 0, func => sub { $_[0] = $_[0]?1:0 } };
+    $templates{rawtuple} = { rmwhitespace => 0, template => 'tuple' };
+    $templates{tuple} = { multi => 1, mincount => 2, maxcount => 2 };
   ()},
   { param => 'crc', template => 'hex' },
   [ crc => '12345678' ],
@@ -187,6 +190,30 @@ BEGIN{@tests=(
   { param => 'x', template => 'prefix', prefix => 'he' },
   [ x => 'hullo' ],
   { x => 'hullo', _err => [[ 'x', 'template', 'prefix' ]] },
+
+  { param => 'issexy', template => 'bool' },
+  [],
+  { issexy => 0 },
+
+  { param => 'issexy', required => 1, template => 'bool' },
+  [],
+  { issexy => undef, _err => [['issexy', 'required', 1]] },
+
+  { param => 'issexy', template => 'bool' },
+  [ issexy => 'HI IM SEXY!' ],
+  { issexy => 1 },
+
+  { param => 'tuple', template => 'rawtuple' },
+  [ tuple => ' so much space ', tuple => ' more space ' ],
+  { tuple => [' so much space ', ' more space ' ]},
+
+  { param => 'tuple', template => 'rawtuple' },
+  [ tuple => 1 ],
+  { tuple => [1], _err => [['tuple', 'mincount', 2]] }, # This error reporting is confusing
+
+  { param => 'tuple', template => 'rawtuple' },
+  [ tuple => 1, tuple => 2, tuple => 3 ],
+  { tuple => [1,2,3], _err => [['tuple', 'maxcount', 2]] }, # Likewise
 
   # num / int / uint templates
   { param => 'age', template => 'num' },

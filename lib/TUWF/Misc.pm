@@ -59,14 +59,18 @@ sub kv_validate {
   my %ret;
 
   for my $f (@$params) {
+    # Inherit some options from templates.
+    !exists($f->{$_}) && _val_from_tpl($f, $_, $templates, $f)
+      for(qw|required default rmwhitespace multi mincount maxcount|);
+
     my $src = (grep $f->{$_}, keys %$sources)[0];
     my @values = $sources->{$src}->($f->{$src});
     @values = ($values[0]) if !$f->{multi};
 
     # check each value and add it to %ret
     for (@values) {
-      my $errfield = _validate($_, $templates, $f);
-      next if !$errfield;
+      my $errfield = _validate_early($_, $f) || _validate($_, $templates, $f);
+      next if !$errfield || $errfield eq 'default';
       push @err, [ $f->{$src}, $errfield, $f->{$errfield} ];
       last;
     }
@@ -82,12 +86,24 @@ sub kv_validate {
 }
 
 
-# Internal function used by kv_validate, checks one value on the validation
-# rules, the name of the failed rule on error, undef otherwise
-sub _validate { # value, \%templates, \%rules
-  my($v, $t, $r) = @_;
+sub _val_from_tpl {
+  my($top_rules, $field, $tpls, $rules) = @_;
+  return if !$rules->{template};
+  my $tpl = $tpls->{$rules->{template}};
+  if(exists $tpl->{$field}) {
+    $top_rules->{$field} = $tpl->{$field};
+  } else {
+    _val_from_tpl($top_rules, $field, $tpls, $tpl);
+  }
+}
 
-  croak "Template $r->{template} not defined." if $r->{template} && !$t->{$r->{template}};
+
+# Initial validation of a value. Same as _validate() below, but this one
+# validates options that need to be checked only once. (The checks in
+# _validate() may run several times when templates are used).
+sub _validate_early { # value, \%rules
+  my($v, $r) = @_;
+
   $r->{required}++ if not exists $r->{required};
   $r->{rmwhitespace}++ if not exists $r->{rmwhitespace};
 
@@ -103,8 +119,18 @@ sub _validate { # value, \%templates, \%rules
   if(!defined($v) || length($v) < 1) {
     return 'required' if $r->{required};
     $_[0] = $r->{default} if exists $r->{default};
-    return undef;
+    return 'default';
   }
+  return undef;
+}
+
+
+# Internal function used by kv_validate, checks one value on the validation
+# rules, the name of the failed rule on error, undef otherwise
+sub _validate { # value, \%templates, \%rules
+  my($v, $t, $r) = @_;
+
+  croak "Template $r->{template} not defined." if $r->{template} && !$t->{$r->{template}};
 
   # length
   return 'minlength' if $r->{minlength} && length $v < $r->{minlength};
