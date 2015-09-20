@@ -9,7 +9,8 @@ use Carp 'croak';
 
 our $VERSION = '0.2';
 our @EXPORT = qw|
-  reqInit reqGet reqPost reqParam reqUploadMIME reqUploadRaw reqSaveUpload
+  reqInit reqGets reqGet reqPosts reqPost reqParams reqParam
+  reqUploadMIMEs reqUploadMIME reqUploadRaws reqUploadRaw reqSaveUpload
   reqCookie reqMethod reqHeader reqPath reqQuery reqBaseURI reqURI reqHost reqIP
 |;
 
@@ -153,60 +154,55 @@ sub _parse_cookies {
 }
 
 
-# get parameters from the query string
-sub reqGet {
-  my($s, $n) = @_;
-  my $lst = $s->{_TUWF}{Req}{GET};
-  return keys %$lst if !$n;
-  return wantarray ? () : undef if !$lst->{$n};
-  return wantarray ? @{$lst->{$n}} : $lst->{$n}[0];
+sub _tablegets {
+  my($k, $s, $n) = @_;
+  my $lst = $s->{_TUWF}{Req}{$k};
+  return keys %$lst if @_ == 2;
+  return $lst->{$n} ? @{$lst->{$n}} : ();
 }
 
 
-# get parameters from the POST body
-sub reqPost {
-  my($s, $n) = @_;
-  my $lst = $s->{_TUWF}{Req}{POST};
-  return keys %$lst if !$n;
-  return wantarray ? () : undef if !$lst->{$n};
-  return wantarray ? @{$lst->{$n}} : $lst->{$n}[0];
+sub _tableget {
+  my($k, $s, $n) = @_;
+  my $v = $s->{_TUWF}{Req}{$k}{$n};
+  return $v ? $v->[0] : undef;
 }
+
+
+sub reqGets        { _tablegets(GET => @_) }
+sub reqGet         { _tableget (GET => @_) }
+sub reqPosts       { _tablegets(POST => @_) }
+sub reqPost        { _tableget (POST => @_) }
+sub reqUploadMIMEs { _tablegets(MIMES => @_) }
+sub reqUploadMIME  { _tableget (MIMES => @_) }
+sub reqUploadRaws  { _tablegets(FILES => @_) }
+sub reqUploadRaw   { _tableget (FILES => @_) }
 
 
 # get parameters from either or both POST and GET
 # (POST has priority over GET in scalar context)
-sub reqParam {
+sub reqParams {
   my($s, $n) = @_;
   my $nfo = $s->{_TUWF}{Req};
   if(!$n) {
     my %keys = map +($_,1), keys(%{$nfo->{GET}}), keys(%{$nfo->{POST}});
     return keys %keys;
   }
-  my $val = [
+  return (
     $nfo->{POST}{$n} ? @{$nfo->{POST}{$n}} : (),
     $nfo->{GET}{$n}  ? @{$nfo->{GET}{$n}}  : (),
-  ];
-  return wantarray ? () : undef if !@$val;
-  return wantarray ? @$val : $val->[0];
+  );
 }
 
 
-# returns the MIME Type of an uploaded file.
-sub reqUploadMIME {
-  my($self, $n) = @_;
-  my $nfo = $self->{_TUWF}{Req}{MIMES};
-  return keys %$nfo if !defined $n;
-  return wantarray ? () : undef if !$nfo->{$n};
-  return wantarray ? @{$nfo->{$n}} : $nfo->{$n}[0];
-}
-
-
-# returns the raw (encoded) contents of an uploaded file
-sub reqUploadRaw {
-  my($self, $n) = @_;
-  my $nfo = $self->{_TUWF}{Req}{FILES}{$n};
-  return wantarray ? () : undef if !$nfo;
-  return wantarray ? @$nfo : $nfo->[0];
+# (POST has priority over GET in scalar context)
+sub reqParam {
+  my($s, $n) = @_;
+  my $nfo = $s->{_TUWF}{Req};
+  return [
+    $nfo->{POST}{$n} ? @{$nfo->{POST}{$n}} : (),
+    $nfo->{GET}{$n}  ? @{$nfo->{GET}{$n}}  : (),
+  ]->[0];
 }
 
 
@@ -215,7 +211,7 @@ sub reqUploadRaw {
 sub reqSaveUpload {
   my($s, $n, $f) = @_;
   open my $F, '>', $f or croak "Unable to write to $f: $!";
-  print $F scalar $s->reqUploadRaw($n);
+  print $F $s->reqUploadRaw($n);
   close $F;
 }
 
@@ -223,7 +219,7 @@ sub reqSaveUpload {
 sub reqCookie {
   my($self, $n) = @_;
   my $nfo = $self->{_TUWF}{Req}{Cookies};
-  return keys %$nfo if !defined $n;
+  return keys %$nfo if @_ == 1;
   return $nfo->{$n};
 }
 
@@ -240,7 +236,7 @@ sub reqMethod {
 #   case-insensitive
 sub reqHeader {
   my($self, $name) = @_;
-  if($name) {
+  if(@_ == 1) {
     (my $v = uc $_[1]) =~ tr/-/_/;
     return $ENV{"HTTP_$v"}||'';
   } else {
@@ -291,4 +287,3 @@ sub reqIP {
 
 
 1;
-

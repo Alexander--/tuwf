@@ -281,7 +281,7 @@ sub _handle_request {
       "HTTP Request Headers:\n".
       join('', map sprintf("  %s: %s\n", $_, $self->reqHeader($_)), $self->reqHeader).
       "POST dump:\n".
-      join('', map sprintf("  %s: %s\n", $_, $self->reqPost($_)), $self->reqPost).
+      join('', map sprintf("  %s: %s\n", $_, join "\n    ", $self->reqPosts($_)), $self->reqPosts).
       "Error:\n  $err\n"
     );
   }

@@ -20,9 +20,9 @@ form is useful if you wish to use a function outside of the TUWF framework.
 Shorthand for calling C<kv_validate()> with the following sources:
 
   Name    TUWF Method
-   post    reqPost()
-   get     reqGet()
-   param   reqParam()
+   post    reqPosts()
+   get     reqGets()
+   param   reqParams()
    cookie  reqCookie()
 
 The L<validate_templates|TUWF/validate_templates> configuration setting is
@@ -65,10 +65,10 @@ subroutine reference. This subroutine should accept one argument: the name of
 the field, and is expected return a list of values, or an empty list if there
 are no values with that key. The following example defines a source by the name
 "param", and tells C<kv_validate()> to fetch the values using
-L<reqParam()|TUWF::Request>.
+L<reqParams()|TUWF::Request>.
 
   kv_validate(
-    { param => sub { $TUWF::OBJ->reqParam(shift) } },
+    { param => sub { $TUWF::OBJ->reqParams(shift) } },
     ..
   );
 
@@ -90,7 +90,7 @@ should not be a field from a different source with the same name.
 
 Using the I<sources> example above, specifying C<param =E<gt> 'foo'> as field
 option tells C<kv_validate()> to fetch the value(s) for this field from
-C<reqParam('foo')>.
+C<reqParams('foo')>.
 
 =item required
 
@@ -249,7 +249,7 @@ Usage example:
 
   my $r = kv_validate(
     # sources
-    { param => sub { $TUWF::OBJ->reqParam(shift) } },
+    { param => sub { $TUWF::OBJ->reqParams(shift) } },
     # templates
     { crc32_hex => {
       regex => qr/^[0-9a-f]+$/i,

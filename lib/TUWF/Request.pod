@@ -14,76 +14,102 @@ This module can not be used outside of the TUWF framework.
 
 The following methods are added to the main TUWF object:
 
-=head2 reqGet(name)
+=head2 reqGets(name)
 
 Get parameters from the query string. When I<name> is not given or undef,
-returns a list of all parameter names (in no defined order). When used in array
-context and with I<name> given, will return all values of the parameter in the
-order that they appear in the query string. When used in scalar context and
-with I<name> given, will return the value of the first occurence of the
-parameter. When I<name> is given, but there exists no parameter with that name,
-C<reqGet> will return an empty list in array context or C<undef> otherwise.
+returns a list of all parameter names (in no defined order). Otherwise it will
+return all values of the parameter in the order that they appear in the query
+string. In both cases an empty list may be returned if there are no parameters
+or if the named parameter does not exist. This method should not be used in
+scalar context.
+
 Examples:
 
   # Let the query string be the following:
   #  "key=value&foo=bar1&foo=bar2"
   # Then:
-  my @list = $self->reqGet();     # @list = ('key', 'foo')
-  my $key = $self->reqGet('key'); # $key = 'value'
-  my $foo = $self->reqGet('foo'); # $foo = 'bar1'
-  my @foo = $self->reqGet('foo'); # @foo = ('bar1', 'bar2')
-  my $no  = $self->reqGet('no');  # $no = undef
-  my @no  = $self->reqGet('no');  # @no = ()
+  my @list = $self->reqGets();      # @list = ('key', 'foo')
+  my @foo  = $self->reqGets('foo'); # @foo = ('bar1', 'bar2')
+  my @no   = $self->reqGets('no');  # @no = ()
+
+=head2 reqGet(name)
+
+Get the first value of the named query string parameter. Roughly equivalent to
+C<(reqGets($name))[0]>. The name argument is required. Since this method only
+ever returns a scalar value, it is safe to use when constructing lists:
+
+  my %stuff = (
+    name => $self->reqGet('name'),
+  );
+
+Don't do that with C<reqGets()>, as it may leave you vulnerable to parameter
+injection!
+
+=head2 reqPosts(name)
+
+Behaves the same as C<reqGets()>, but fetches the information from the POST
+data of the request instead. Unlike many CGI libraries, C<reqPost()> will
+B<not> return the file contents when the parameter comes from a file upload
+input element, instead, it will return the file name.
 
 =head2 reqPost(name)
 
-Behaves the same as C<reqGet()>, but fetches the information from the POST data
-of the request instead. Unlike many CGI libraries, C<reqPost()> will B<not>
-return the file contents when the parameter comes from a file upload input
-element, instead, it will return the file name.
+Behaves the same as C<reqGet()>, but for POST data.
 
-=head2 reqParam(name)
+=head2 reqParams(name)
 
-Combines C<reqGet()> and C<reqPost()>. The behaviour is the same as both
-functions, but C<reqParam()> returns data from both the query string and POST
-data. In listings, POST parameters and values are always listed before the GET
-parameters and values, and in scalar context the value of the POST parameter
-has priotity over the GET value.
+Combines C<reqGets()> and C<reqPosts()>. The behaviour is the same as both
+functions, but C<reqParams()> returns data from both the query string and POST
+data. POST parameters and values are always listed before the GET parameters
+and values.
 
 This function behaves similar to the C<param()> function of many CGI libraries,
-with the exception that (like all other TUWF methods) C<reqParam()> returns all
+with the exception that (like all other TUWF methods) C<reqParams()> returns all
 data in Perls native unicode format and that for file uploads, the file name is
 returned instead of its contents.
 
-=head2 reqUploadMIME(name)
+=head2 reqParam(name)
+
+Behaves the same as C<reqGet()>, but works on both POST and GET data. If a
+parameter is set in both the POST and GET data, only the value in the POST data
+is returned.
+
+=head2 reqUploadMIMEs(name)
 
 When I<name> is not given, returns a list of all parameter names that represent
-an uploaded file (in no particular order). In array context and when I<name> is
-given, returns the MIME type of all uploaded files corresponding to the named
-parameter, in the order that they appear in the POST data. In scalar context
-and when I<name> is given, will return the MIME type of the first uploaded file
-corresponding to the named parameter. When the named parameter does not exist
-or does not represent an uploaded file, C<reqUploadMIME()> will return an empty
-list in array context or C<undef> otherwise.
+an uploaded file (in no particular order). When I<name> is given, returns the
+MIME type of all uploaded files corresponding to the named parameter, in the
+order that they appear in the POST data. When the named parameter does not
+exist or does not represent an uploaded file, C<reqUploadMIMEs()> will return
+an empty list.
 
 It is important to note that this function B<only> works with parameters that
 actually represent an uploaded file. If a parameter comes from a file upload
 input element, but the user did not use it to actually upload a file (i.e. left
-it empty), then C<reqUploadMIME()> will treat it as if the parameter did not
-exist at all. The parameter will then still show up in C<reqPost()>, but with
+it empty), then C<reqUploadMIMEs()> will treat it as if the parameter did not
+exist at all. The parameter will then still show up in C<reqPosts()>, but with
 an empty string as "file name".
 
-=head2 reqUploadRaw(name)
+=head2 reqUploadMIME(name)
 
-In list context, returns the contents of all uploaded files corresponding to
-the named parameter, in the order that they appear in the POST data. In scalar
-context, returns the contents of the first uploaded file.
+Behaves similarly to C<reqGet()>, but works with the fields from
+C<reqUploadMIMEs()>.
+
+=head2 reqUploadRaws(name)
+
+Behaves similarly to C<reqUploadMIMEs()>, but returns the file data instead of
+the MIME types.
 
 Unlike all other methods, this method does B<NOT> return the data in Perls
 native unicode format, but will return the data as a binary string. The reason
 for this is that TUWF has no way of knowing in which encoding the uploaded file
 is, and the file may not even represent text at all, but could be any binary
 file (e.g. a JPEG image).
+
+=head2 reqUploadRaw(name)
+
+Behaves similarly to C<reqGet()>, but works with the fields from
+C<reqUploadRaws()>.
 
 =head2 reqSaveUpload(name, file)
 

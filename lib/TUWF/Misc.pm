@@ -157,9 +157,9 @@ sub _validate { # value, \%templates, \%rules
 sub formValidate {
   my($self, @fields) = @_;
   return kv_validate(
-    { post   => sub { $self->reqPost(shift)   },
-      get    => sub { $self->reqGet(shift)    },
-      param  => sub { $self->reqParam(shift)  },
+    { post   => sub { $self->reqPosts(shift)  },
+      get    => sub { $self->reqGets(shift)   },
+      param  => sub { $self->reqParams(shift) },
       cookie => sub { $self->reqCookie(shift) },
     }, $self->{_TUWF}{validate_templates} || {},
     \@fields
