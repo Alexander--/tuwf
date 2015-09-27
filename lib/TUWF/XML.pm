@@ -10,7 +10,7 @@ use Exporter 'import';
 use Carp 'carp', 'croak';
 
 
-our $VERSION = '0.2';
+our $VERSION = '1.0';
 our(@EXPORT_OK, %EXPORT_TAGS, @htmltags, @htmlexport, @xmlexport, %htmlbool, $OBJ);
 
 
