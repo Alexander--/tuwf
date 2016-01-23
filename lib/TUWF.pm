@@ -104,7 +104,7 @@ sub load_recursive {
   my $rec;
   $rec = sub {
     my($d, $f, $m) = @_;
-    for my $s (glob "$d/$f/*") {
+    for my $s (glob "\"$d/$f/*\"") {
       $OBJ->_load_module("${m}::$1") if -f $s && $s =~ /([^\/]+)\.pm$/;
       $rec->($d, "$f/$1", "${m}::$1") if -d $s && $s =~ /([^\/]+)$/;
     }
