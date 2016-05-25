@@ -28,7 +28,6 @@ sub resInit {
     status => 200,
     headers => [
       'Content-Type' => 'text/html; charset=UTF-8',
-      'X-Powered-By' => 'Perl-TUWF',
     ],
     cookies => {},
     content => '',
