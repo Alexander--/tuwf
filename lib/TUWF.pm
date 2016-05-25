@@ -76,6 +76,7 @@ sub run {
     require FCGI;
     import FCGI;
     my $r = FCGI::Request();
+    $OBJ->{_TUWF}{fcgi_req} = $r;
     while($r->Accept() >= 0) {
       $OBJ->_handle_request;
       $r->Finish();

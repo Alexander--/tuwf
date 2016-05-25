@@ -182,6 +182,13 @@ C<reqHeader('Host')>.
 Returns the IP address of the client. Note that this may be an IPv4 or IPv6
 address, depending on the configuration of your webserver.
 
+=head2 reqFCGI()
+
+Returns the C<FCGI::Request> when running in FastCGI mode, or C<undef>
+otherwise. See L<FCGI> for more information. Mainly useful for calling the
+C<Detach()> and C<Attach()> methods to work around modules that do not work
+correctly with FCGI's filehandles. Calling any TUWF methods while the
+filehandles are detached might give weird results, so use with care.
 
 =head1 SEE ALSO
 

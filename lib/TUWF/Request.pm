@@ -11,7 +11,7 @@ our $VERSION = '1.0';
 our @EXPORT = qw|
   reqInit reqGets reqGet reqPosts reqPost reqParams reqParam
   reqUploadMIMEs reqUploadMIME reqUploadRaws reqUploadRaw reqSaveUpload
-  reqCookie reqMethod reqHeader reqPath reqQuery reqBaseURI reqURI reqHost reqIP
+  reqCookie reqMethod reqHeader reqPath reqQuery reqBaseURI reqURI reqHost reqIP reqFCGI
 |;
 
 
@@ -285,5 +285,9 @@ sub reqIP {
   return $ENV{REMOTE_ADDR}||'0.0.0.0';
 }
 
+
+sub reqFCGI {
+  return shift->{_TUWF}{fcgi_req};
+}
 
 1;
