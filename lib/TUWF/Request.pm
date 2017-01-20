@@ -11,7 +11,7 @@ our $VERSION = '1.0';
 our @EXPORT = qw|
   reqInit reqGets reqGet reqPosts reqPost reqParams reqParam
   reqUploadMIMEs reqUploadMIME reqUploadRaws reqUploadRaw reqSaveUpload
-  reqCookie reqMethod reqHeader reqPath reqQuery reqBaseURI reqURI reqHost reqIP reqFCGI
+  reqCookie reqMethod reqHeader reqPath reqQuery reqProtocol reqBaseURI reqURI reqHost reqIP reqFCGI
 |;
 
 
@@ -258,9 +258,15 @@ sub reqPath {
 }
 
 
+sub reqProtocol {
+  return $ENV{HTTPS} ? 'https' : 'http';
+}
+
+
 # returns base URI, excluding trailing slash
 sub reqBaseURI {
-  return ($ENV{HTTPS} ? 'https://' : 'http://').shift->reqHost();
+  my $s = shift;
+  return $s->reqProtocol().'://'.$s->reqHost();
 }
 
 
