@@ -7,7 +7,7 @@ use Encode 'decode_utf8', 'encode_utf8';
 use Exporter 'import';
 use Carp 'croak';
 
-our $VERSION = '1.0';
+our $VERSION = '1.1';
 our @EXPORT = qw|
   reqInit reqGets reqGet reqPosts reqPost reqParams reqParam
   reqUploadMIMEs reqUploadMIME reqUploadRaws reqUploadRaw reqSaveUpload

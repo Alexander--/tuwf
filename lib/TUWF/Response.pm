@@ -8,7 +8,7 @@ use Exporter 'import';
 use POSIX 'strftime';
 
 
-our $VERSION = '1.0';
+our $VERSION = '1.1';
 our @EXPORT = qw|
   resInit resHeader resCookie resBuffer resFd resStatus resRedirect resNotFound resFinish
 |;
