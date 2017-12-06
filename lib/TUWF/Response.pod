@@ -168,8 +168,10 @@ I<type> is 'post' a 303 (See Other) status code is used. The latter is
 recommended for use as response to a POST request, as it explicitely tells the
 browser to use a GET request for the redirect.
 
-C<resRedirect()> calls C<resInit()>, so if you wish to send any additional
-headers or cookies, you have to set these B<after> calling C<resRedirect()>.
+B<Compatibility note>: TUWF 1.1 and earlier called C<resInit()> in
+C<resRedirect()>, so if you wished to send any additional headers or cookies,
+you had to set these B<after> calling C<resRedirect()>. In TUWF versions after
+1.1, you can also set headers and cookies set before calling C<resRedirect()>.
 
 =head2 resJSON(data)
 

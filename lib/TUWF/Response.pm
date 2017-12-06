@@ -169,9 +169,10 @@ sub resStatus {
 sub resRedirect {
   my($self, $url, $type) = @_;
 
-  $self->resInit;
+  $self->resBuffer('clear');
   my $fd = $self->resFd();
   print $fd 'Redirecting...';
+  $self->resHeader('Content-Type' => 'text/plain');
   $self->resHeader('Location' => $self->reqBaseURI().$url);
   $self->resStatus(!$type ? 301 : $type eq 'temp' ? 307 : 303);
 }
