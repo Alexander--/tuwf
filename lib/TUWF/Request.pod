@@ -74,6 +74,14 @@ Behaves the same as C<reqGet()>, but works on both POST and GET data. If a
 parameter is set in both the POST and GET data, only the value in the POST data
 is returned.
 
+=head2 reqJSON()
+
+Returns the decoded JSON object if the request body was of type
+C<application/json>; Returns C<undef> otherwise.
+
+This requires the L<JSON::XS> module. If this module is not available, any
+request with a JSON body will automatically get a 500 response.
+
 =head2 reqUploadMIMEs(name)
 
 When I<name> is not given, returns a list of all parameter names that represent

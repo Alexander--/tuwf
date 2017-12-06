@@ -210,7 +210,8 @@ sub _handle_request {
     my $err = $self->reqInit();
     if($err) {
       warn "Client sent non-UTF-8-encoded data. Generating HTTP 400 response.\n" if $err eq 'utf8';
-      $self->{_TUWF}{error_400_handler}->($self) if $err eq 'utf8';
+      warn "Client sent an invalid JSON object. Generating HTTP 400 response.\n" if $err eq 'json';
+      $self->{_TUWF}{error_400_handler}->($self) if $err eq 'utf8' || $err eq 'json';
       $self->{_TUWF}{error_405_handler}->($self) if $err eq 'method';
       $self->{_TUWF}{error_413_handler}->($self) if $err eq 'maxpost';
       return 1;

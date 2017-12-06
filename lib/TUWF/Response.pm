@@ -6,11 +6,12 @@ use strict;
 use warnings;
 use Exporter 'import';
 use POSIX 'strftime';
+use Carp 'croak';
 
 
 our $VERSION = '1.1';
 our @EXPORT = qw|
-  resInit resHeader resCookie resBuffer resFd resStatus resRedirect resNotFound resFinish
+  resInit resHeader resCookie resBuffer resFd resStatus resRedirect resNotFound resJSON resFinish
 |;
 
 
@@ -179,6 +180,18 @@ sub resNotFound {
   my $self = shift;
   $self->resInit;
   $self->{_TUWF}{error_404_handler}->($self);
+}
+
+
+sub resJSON {
+  my($self, $obj) = @_;
+  croak "Unable to load JSON::XS, is it installed?\n"
+    unless eval { require JSON::XS; 1 };
+
+  $self->resInit;
+  $self->resHeader('Content-Type' => 'application/json');
+  my $fd = $self->resFd();
+  print $fd JSON::XS::encode_json($obj);
 }
 
 

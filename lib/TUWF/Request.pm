@@ -9,7 +9,7 @@ use Carp 'croak';
 
 our $VERSION = '1.1';
 our @EXPORT = qw|
-  reqInit reqGets reqGet reqPosts reqPost reqParams reqParam
+  reqInit reqGets reqGet reqPosts reqPost reqParams reqParam reqJSON
   reqUploadMIMEs reqUploadMIME reqUploadRaws reqUploadRaw reqSaveUpload
   reqCookie reqMethod reqHeader reqPath reqQuery reqProtocol reqBaseURI reqURI reqHost reqIP reqFCGI
 |;
@@ -45,7 +45,10 @@ sub reqInit {
     die "Couldn't read all POST data.\n" if $ENV{CONTENT_LENGTH} > read STDIN, $data, $ENV{CONTENT_LENGTH}, 0;
 
     $err = eval {
-      if(($ENV{'CONTENT_TYPE'}||'') =~ m{^multipart/form-data; boundary=(.+)$}) {
+      if(($ENV{'CONTENT_TYPE'}||'') =~ m{^application/json(?:;.*)?$}) {
+        $self->{_TUWF}{Req}{JSON} = _parse_json($data);
+        return 'json' if !$self->{_TUWF}{Req}{JSON};
+      } elsif(($ENV{'CONTENT_TYPE'}||'') =~ m{^multipart/form-data; boundary=(.+)$}) {
         _parse_multipart($self, $data, $1);
       } else {
         $self->{_TUWF}{Req}{POST} = _parse_urlencoded($data);
@@ -78,6 +81,16 @@ sub _parse_urlencoded {
     push @{$dat{$key}}, $val;
   }
   return \%dat;
+}
+
+
+sub _parse_json {
+  my $d = shift;
+  die "Received a JSON request body, but was unable to load JSON::XS. Is it installed?\n"
+    unless eval { require JSON::XS; 1 };
+  my $res = eval { JSON::XS::decode_json($d) };
+  return undef if !$res || ref $res ne 'HASH'; # We always expect to receive a JSON object.
+  return $res;
 }
 
 
@@ -203,6 +216,11 @@ sub reqParam {
     $nfo->{POST}{$n} ? @{$nfo->{POST}{$n}} : (),
     $nfo->{GET}{$n}  ? @{$nfo->{GET}{$n}}  : (),
   ]->[0];
+}
+
+
+sub reqJSON {
+  return shift->{_TUWF}{Req}{JSON};
 }
 
 

@@ -25,11 +25,19 @@ other hand, B<is> quite small. Its total codebase is significantly smaller than
 the primary code of CGI.pm, and TUWF requires absolutely no extra dependencies
 to run.
 
-Some optional features, however, do require extra modules. In order to run TUWF
-in a FastCGI environment, the L<FCGI|FCGI> module is required. The
-L<TUWF::DB|TUWF::DB> methods require L<DBI|DBI>, and
-L<PerlIO::gzip|PerlIO::gzip> is required when you want to enable content
-encoding.
+Some optional features, however, do require extra modules:
+
+=over
+
+=item * L<DBI>: For the L<TUWF::DB> database handling methods.
+
+=item * L<FCGI>: To run TUWF in a FastCGI environment.
+
+=item * L<JSON::XS>: If you need to handle requests with a JSON body, or wish to output JSON yourself.
+
+=item * L<PerlIO::gzip>: For output compression.
+
+=back
 
 =item The generated response is buffered.
 
@@ -43,8 +51,8 @@ added bonus, your pages will be compressed more efficiently when output
 compression is enabled.
 
 On the other hand, this means that you can't use TUWF for applications that
-require streaming dynamic content (e.g. a chat application), and you may get
-into memory issues when sending large files.
+require Websockets or other forms of streaming dynamic content (e.g. a chat
+application), and you may get into memory issues when sending large files.
 
 =item Everything is UTF-8.
 
@@ -520,7 +528,7 @@ C<examples/singlefile.pl> script from the TUWF distribution. I assume the TUWF
 distribution is unpacked in C</tuwf> and the site runs on the hostname
 C<test.example.com>.
 
-=head2 Examples for Apache (2.2)
+=head2 Examples for Apache (2.2 or 2.4)
 
 CGI mode:
 

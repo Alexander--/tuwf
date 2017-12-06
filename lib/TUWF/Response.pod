@@ -171,6 +171,14 @@ browser to use a GET request for the redirect.
 C<resRedirect()> calls C<resInit()>, so if you wish to send any additional
 headers or cookies, you have to set these B<after> calling C<resRedirect()>.
 
+=head2 resJSON(data)
+
+Sets the content type to C<application/json> and sends the encoded JSON object
+to the client.
+
+C<resJSON()> calls C<resInit()>, so if you wish to send any additional headers
+or cookies, you have to set these B<after> calling C<resJSON()>.
+
 =head2 resNotFound()
 
 Return a 404 Page Not Found response. The response will be exactly the same as

@@ -32,6 +32,8 @@ TUWF::register(
   # /sub/ as the second argument to subpage().
   qr/sub\/(.*)/ => \&subpage,
 
+  qr{api/echo\.json} => \&echoapi,
+
   # all requests for non-registered URIs will throw a 404
 );
 
@@ -67,6 +69,12 @@ sub subpage {
   # output a plain text file containing $uri
   $self->resHeader('Content-Type' => 'text/plain; charset=UTF-8');
   lit $uri;
+}
+
+
+sub echoapi {
+  my $self = shift;
+  $self->resJSON($self->reqJSON);
 }
 
 
