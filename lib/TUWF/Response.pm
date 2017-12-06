@@ -203,7 +203,11 @@ sub resFinish {
   close $i->{fd};
   $self->resHeader('Content-Length' => length($i->{content}));
 
-  printf "Status: %d\r\n", $i->{status};
+  if($self->{_TUWF}{http}) {
+    printf "HTTP/1.0 %d Hi, I am a HTTP response.\r\n", $i->{status};
+  } else {
+    printf "Status: %d\r\n", $i->{status};
+  }
   printf "%s: %s\r\n", $i->{headers}[$_*2], $i->{headers}[$_*2+1]
     for (0..$#{$i->{headers}}/2);
   printf "Set-Cookie: %s\r\n", $i->{cookies}{$_} for (keys %{$i->{cookies}});

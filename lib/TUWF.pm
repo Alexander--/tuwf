@@ -67,12 +67,18 @@ sub run {
   # initialize DB connection
   $OBJ->dbInit if $OBJ->{_TUWF}{db_login};
 
+  # In a FastCGI environment, STDIN will be a listen socket; getpeername() will
+  # return a ENOTCONN on those, giving us a reliably way to differentiate
+  # between CGI (env vars), FastCGI (STDIN socket), and others.
+  my(undef) = (getpeername \*STDIN);
+  my $isfastcgi = $!{ENOTCONN};
+
   # plain old CGI
   if($ENV{GATEWAY_INTERFACE} && $ENV{GATEWAY_INTERFACE} =~ /CGI/i) {
     $OBJ->_handle_request;
-  }
-  # otherwise, assume a FastCGI environment
-  else {
+
+  # otherwise, test for FastCGI
+  } elsif($isfastcgi) {
     require FCGI;
     import FCGI;
     my $r = FCGI::Request();
@@ -81,6 +87,14 @@ sub run {
       $OBJ->_handle_request;
       $r->Finish();
     }
+
+  # otherwise, run our own HTTP server
+  } else {
+    require HTTP::Server::Simple;
+    require HTTP::Server::Simple::CGI::Environment;
+    $OBJ->{_TUWF}{http} = 1;
+    my $h = TUWF::http->new(3000);
+    $h->run;
   }
 
   # close the DB connection
@@ -324,15 +338,39 @@ sub log {
 
   chomp $msg;
   $msg =~ s/\n/\n  | /g;
+  $msg = $self->{_TUWF}{log_format}->($self, $self->{_TUWF}{Req} ? $self->reqURI : '[init]', $msg);
+
   if($self->{_TUWF}{logfile} && open my $F, '>>:utf8', $self->{_TUWF}{logfile}) {
     flock $F, 2;
     seek $F, 0, 2;
-    print $F $self->{_TUWF}{log_format}->($self, $self->{_TUWF}{Req} ? $self->reqURI : '[init]', $msg);
+    print $F $msg;
     flock $F, 4;
     close $F;
   }
+  # Also always dump stuff to STDERR if we're running a standalone HTTP server.
+  warn $msg if $self->{_TUWF}{http};
   $SIG{__WARN__} = $old;
 }
+
+
+
+# Minimal subclass of HTTP::Server::Simple with CGI environment variables.
+package TUWF::http;
+
+use strict;
+use warnings;
+use base qw{
+    HTTP::Server::Simple
+    HTTP::Server::Simple::CGI::Environment
+};
+
+sub accept_hook { shift->setup_environment }
+sub setup       { shift->setup_environment_from_metadata(@_) }
+
+sub handler {
+  shift->setup_server_url;
+  $TUWF::OBJ->_handle_request;
+};
 
 
 1;

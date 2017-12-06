@@ -33,6 +33,8 @@ Some optional features, however, do require extra modules:
 
 =item * L<FCGI>: To run TUWF in a FastCGI environment.
 
+=item * L<HTTP::Server::Simple>: To run the standalone HTTP server.
+
 =item * L<JSON::XS>: If you need to handle requests with a JSON body, or wish to output JSON yourself.
 
 =item * L<PerlIO::gzip>: For output compression.
@@ -65,11 +67,10 @@ be able to use TUWF. It B<is> possible to use external resources which use
 other encodings, but you will have to C<decode()> that into Perls native
 encoding before passing it to any TUWF function.
 
-=item Designed for CGI and FastCGI environments.
+=item Designed for FastCGI environments.
 
-TUWF is designed to be run in CGI and FastCGI environments, and has been
-optimized for FastCGI. That is, all modules will be pre-loaded at
-initialization.
+TUWF is designed and optimized to be run a FastCGI environment, but it can also
+be used for plain old CGI scripts and it can run as a standalone HTTP server.
 
 Due to the singleton design of TUWF, you should avoid running TUWF websites in
 persistent environments that allow multiple websites to share the same process,
@@ -128,10 +129,10 @@ code to work with that one.
 
 A website written using TUWF consists of a single Perl script, optionally
 accompanied by several modules. The script is responsible for loading,
-initializing and running TUWF, and can be used as a CGI or FastCGI script. For
-small and simple websites, this script may contain the code for the entire
-website. Usually, however, the actual implementation of the website is spread
-among the various modules.
+initializing and running TUWF, and can be used as a CGI script, FastCGI script,
+or standalone server. For small and simple websites, this script may contain
+the code for the entire website. Usually, however, the actual implementation of
+the website is spread among the various modules.
 
 The script can load the modules by calling C<TUWF::load()> or
 C<TUWF::load_recursive()>. TUWF configuration variables can be set using
@@ -171,9 +172,9 @@ C<req> and L<TUWF::Response|TUWF::Response> with C<res>. It is a good idea to
 adopt this style when you write your own methods.
 
 Be warned that the data in the TUWF object may or may not persist among
-multiple requests, depending on whether your script is running in FastCGI or
-CGI mode, respectively. In particular, it is a bad idea to store session data
-in this object, assuming it to be available on the next request. Storing data
+multiple requests, depending on whether your script is running in CGI, FastCGI
+or standalone mode. In particular, it is a bad idea to store session data in
+this object, assuming it to be available on the next request. Storing data
 specific to a single request in the object is fine, as long as you make sure to
 reset or re-initialize the data at the beginning of the request. The
 C<pre_request_handler> is useful for such practice.
@@ -470,10 +471,10 @@ the appropriate stages.
 Whether this function ever returns or not depends on the environment your
 script is running in; if you're running your script in a CGI environment,
 C<TUWF::run()> will return as soon as the request has been processed. If, on
-the other hand, you are running the script as a FastCGI script, it will keep
-waiting for new incoming requests and will therefore never return. It is a bad
-idea to assume either way, so you want to avoid putting any run-time code after
-calling C<TUWF::run()>.
+the other hand, you are running the script as a FastCGI script or standalone
+server, it will keep waiting for new incoming requests and will therefore never
+return. It is a bad idea to assume either way, so you want to avoid putting any
+run-time code after calling C<TUWF::run()>.
 
 
 
@@ -506,15 +507,17 @@ to the log file.
 =head1 SERVER CONFIGURATION
 
 Since a website written using TUWF consists of a single Perl script that acts
-as the main script for your site, the only thing you have to do is tell your
-webserver to run it. There are generally two things you should take care of:
+as the main script for your site, the only thing you have to do is to run the
+script, or tell your webserver to run it for you. There are generally two
+things you should take care of:
 
 =over
 
 =item 1.
 
-You can run the script as CGI or FastCGI script. In the case of FastCGI, you
-will need the L<FCGI|FCGI> module.
+Make sure you have the right modules installed: CGI is supported out of the
+box, but for FastCGI you will need L<FCGI> and for the standalone web server,
+you'll need L<HTTP::Server::Simple>.
 
 =item 2.
 
@@ -527,6 +530,15 @@ The following examples show how to configure your server to run the
 C<examples/singlefile.pl> script from the TUWF distribution. I assume the TUWF
 distribution is unpacked in C</tuwf> and the site runs on the hostname
 C<test.example.com>.
+
+=head2 Standalone
+
+The easiest way to run a TUWF project is to simply... run it. TUWF will
+automatically start a HTTP server on port 3000, and your site will be
+accessible on L<http://localhost:3000/>.
+
+This mode is intended for development use only, and it can only process a
+single request at a time.
 
 =head2 Examples for Apache (2.2 or 2.4)
 

@@ -22,6 +22,7 @@ use lib $ROOT.'/lib';
 # load TUWF and import all html functions
 use TUWF ':html';
 
+TUWF::set(debug => 1);
 
 # "register" URIs, and map them to a function
 TUWF::register(

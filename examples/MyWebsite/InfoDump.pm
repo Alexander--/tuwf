@@ -38,19 +38,19 @@ sub info {
     h2 'GET Parameters';
     table;
      thead; Tr; td 'Name'; td 'Value'; end; end;
-     $tr->($_, join "\n---\n", $self->reqGet($_)) for ($self->reqGet());
+     $tr->($_, join "\n---\n", $self->reqGet($_)) for ($self->reqGets());
     end;
 
     h2 'POST Parameters';
     table;
      thead; Tr; td 'Name'; td 'Value'; end; end;
-     $tr->($_, join "\n---\n", $self->reqPost($_)) for ($self->reqPost());
+     $tr->($_, join "\n---\n", $self->reqPost($_)) for ($self->reqPosts());
     end;
 
     h2 'Uploaded files';
     table;
      thead; Tr; td 'Name'; td 'File size - File name - Mime type'; end; end;
-     $tr->($_, length($self->reqUploadRaw($_)).' - '.$self->reqPOST($_).' - '.$self->reqUploadMIME($_)) for ($self->reqUploadMIME());
+     $tr->($_, length($self->reqUploadRaw($_)).' - '.$self->reqPost($_).' - '.$self->reqUploadMIME($_)) for ($self->reqUploadMIMEs());
     end;
 
     h2 'HTTP Headers';
