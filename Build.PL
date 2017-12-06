@@ -12,9 +12,11 @@ Module::Build->new(
     perl => '5.8.0',
   },
   recommends => {
-    'PerlIO::gzip'    => 0,
-    'FCGI'            => 0,
-    'DBI'             => 0,
+    'DBI'                  => 0,
+    'FCGI'                 => 0,
+    'HTTP::Server::Simple' => 0,
+    'JSON::XS'             => 0,
+    'PerlIO::gzip'         => 0,
   },
   meta_merge => {
     resources => {
