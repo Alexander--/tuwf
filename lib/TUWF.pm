@@ -35,9 +35,13 @@ our $OBJ = bless {
     # No particular selection of MIME types
     mime_types => {qw{
       7z     application/x-7z-compressed
+      atom   application/atom+xml
+      bmp    image/bmp
       css    text/css
+      gif    image/gif
       htm    text/html
       html   text/html
+      ico    image/x-icon
       jpeg   image/jpeg
       jpg    image/jpeg
       js     application/javascript
@@ -51,6 +55,7 @@ our $OBJ = bless {
       pdf    application/pdf
       png    image/png
       rar    application/x-rar-compressed
+      rss    application/rss+xml
       tar    application/x-tar
       txt    text/plain
       webm   video/webm
