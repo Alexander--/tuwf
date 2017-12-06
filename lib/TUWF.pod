@@ -278,6 +278,10 @@ Get or set TUWF configuration variables. When called with only one argument,
 will return the configuration variable with that key. Otherwise the number of
 arguments must be a multiple of 2, setting the configuration parameters.
 
+Note that most settings don't like to be changed from within route handlers and
+other callbacks. You should only need to set configuration variables during
+initialization.
+
 =over
 
 =item content_encoding
@@ -293,7 +297,7 @@ L<resCookie()|TUWF::Response>. These options can still be overruled by each
 individual call to C<resCookie()>. This can be useful when globally setting the
 cookie domain:
 
-  $self->set(cookie_defaults => { domain => '.example.org' });
+  TUWF::set(cookie_defaults => { domain => '.example.org' });
   $self->resCookie(foo => 'bar');
   
   # is equivalent to:
@@ -429,6 +433,19 @@ C</usr/sbin/sendmail>.
 Maximum length of the contents of POST requests, in bytes. This disallows
 people to upload large files and potentially cause your script to run out of
 memory. Set to 0 to disable this limit. Default: 10MB.
+
+=item mime_types
+
+Hash of file extension to MIME type. This is used by
+L<resFile()|TUWF::Response> to set the appropriate I<Content-type> header. The
+default already comes with a few extensions, but you can easily add over
+override your own using:
+
+  TUWF::set('mime_types')->{exe} = 'application/x-msdownload';
+
+=item mime_default
+
+The default MIME type for extensions not covered in L<mime_types|/mime_types>.
 
 =item pre_request_handler
 

@@ -32,6 +32,35 @@ our $OBJ = bless {
       sprintf "[%s] %s -> %s\n", scalar localtime(), $uri, $msg;
     },
     validate_templates => {},
+    # No particular selection of MIME types
+    mime_types => {qw{
+      7z     application/x-7z-compressed
+      css    text/css
+      htm    text/html
+      html   text/html
+      jpeg   image/jpeg
+      jpg    image/jpeg
+      js     application/javascript
+      json   application/json
+      mp3    audio/mpeg
+      mp4    video/mp4
+      mp4v   video/mp4
+      mpg4   video/mp4
+      oga    audop/ogg
+      ogg    audio/ogg
+      pdf    application/pdf
+      png    image/png
+      rar    application/x-rar-compressed
+      tar    application/x-tar
+      txt    text/plain
+      webm   video/webm
+      xhtml  text/html
+      xml    application/xml
+      xsd    application/xml
+      xsl    application/xml
+      zip    application/zip
+    }},
+    mime_default => 'text/plain',
   }
 }, 'TUWF::Object';
 

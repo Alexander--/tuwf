@@ -11,7 +11,8 @@ use Carp 'croak';
 
 our $VERSION = '1.1';
 our @EXPORT = qw|
-  resInit resHeader resCookie resBuffer resFd resStatus resRedirect resNotFound resJSON resFinish
+  resInit resHeader resCookie resBuffer resFd resStatus resRedirect
+  resNotFound resJSON resBinary resFile resFinish
 |;
 
 
@@ -192,6 +193,39 @@ sub resJSON {
   $self->resHeader('Content-Type' => 'application/json');
   my $fd = $self->resFd();
   print $fd JSON::XS::encode_json($obj);
+}
+
+
+sub resBinary {
+  my($self, $data) = @_;
+  $self->resBuffer('none');
+
+  # Write to the buffer directly, bypassing the fd. This avoids extra copying
+  # and bypasses the ':utf8' filter.
+  $self->{_TUWF}{Res}{content} = $data;
+}
+
+
+sub resFile {
+  my($self, $path, $fn) = @_;
+
+  # This also catches files with '..' somewhere in the middle of the name.
+  # Let's just disallow that too to simplify this check, I'd err on the side of
+  # caution.
+  croak "Possible path traversal attempt" if $fn =~ /\.\./;
+
+  my $file = "$path/$fn";
+  return 0 if !-f $file;
+  open my $F, '<', $file or croak "Unable to open '$file': $!";
+  {
+      local $/=undef;
+      $self->resBinary(scalar <$F>);
+  }
+
+  my $ext = $fn =~ m{\.([^/\.]+)$} ? lc $1 : '';
+  my $ctype = $self->{_TUWF}{mime_types}{$ext} || $self->{_TUWF}{mime_default};
+  $self->resHeader('Content-Type' => "$ctype; charset=UTF-8"); # Adding a charset to binary formats should be safe, too.
+  return 1;
 }
 
 
