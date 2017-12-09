@@ -380,6 +380,11 @@ report will be written to the log. It is recommended to ignore the error
 message passed to your subroutine and to enable the log file, so you won't risk
 sending sensitive information to your visitors.
 
+=item http_server_port
+
+Port to listen on when running the standalone HTTP server. This defaults to the
+C<TUWF_HTTP_SERVER_PORT> environment variable, or 3000 if it is not set.
+
 =item logfile
 
 To enable logging, set this to a string that indicates the path to your log

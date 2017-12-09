@@ -66,6 +66,7 @@ our $OBJ = bless {
       zip    application/zip
     }},
     mime_default => 'text/plain',
+    http_server_port => $ENV{TUWF_HTTP_SERVER_PORT}||3000,
   }
 }, 'TUWF::Object';
 
@@ -127,7 +128,7 @@ sub run {
     require HTTP::Server::Simple;
     require HTTP::Server::Simple::CGI::Environment;
     $OBJ->{_TUWF}{http} = 1;
-    my $h = TUWF::http->new(3000);
+    my $h = TUWF::http->new($OBJ->{_TUWF}{http_server_port});
     $h->run;
   }
 
