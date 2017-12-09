@@ -368,8 +368,7 @@ sub log {
 
   # temporarily disable the warnings-to-log, to avoid infinite recursion if
   # this function throws a warning.
-  my $old = $SIG{__WARN__};
-  $SIG{__WARN__} = undef;
+  local $SIG{__WARN__} = undef;
 
   chomp $msg;
   $msg =~ s/\n/\n  | /g;
@@ -384,7 +383,6 @@ sub log {
   }
   # Also always dump stuff to STDERR if we're running a standalone HTTP server.
   warn $msg if $self->{_TUWF}{http};
-  $SIG{__WARN__} = $old;
 }
 
 
