@@ -76,9 +76,11 @@ my @handlers;
 sub import {
   my $self = shift;
   my $pack = caller();
+  # Always export 'tuwf'. This can still be excluded with a '!tuwf' in @_
+  my @arg = ('tuwf', @_);
 
   # import requested functions from TUWF submodules
-  croak $@ if @_ && !eval "package $pack; import TUWF::func \@_; 1";
+  croak $@ if !eval "package $pack; import TUWF::func \@arg; 1";
 }
 
 
@@ -224,6 +226,9 @@ our @EXPORT_OK = (
   @TUWF::XML::EXPORT_OK
 );
 our %EXPORT_TAGS = %TUWF::XML::EXPORT_TAGS;
+our @EXPORT = ('tuwf');
+
+sub tuwf() { $TUWF::OBJ }
 
 
 

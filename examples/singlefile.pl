@@ -71,15 +71,14 @@ sub subpage {
   $self->resHeader('Content-Type' => 'text/plain; charset=UTF-8');
   lit $uri;
   lit "\n";
-  lit $self->capture(1);
+  lit tuwf->capture(1);
   lit "\n";
-  lit $self->capture('capturename');
+  lit tuwf->capture('capturename');
 }
 
 
 sub echoapi {
-  my $self = shift;
-  $self->resJSON($self->reqJSON);
+  tuwf->resJSON(tuwf->reqJSON);
 }
 
 

@@ -210,6 +210,22 @@ approach does not suffer from this problem and is therefore recommended.
 
 
 
+=head1 EXPORTED FUNCTIONS
+
+By default, TUWF exports a single function.
+
+=head2 tuwf()
+
+Returns the global TUWF object. This allows for convenient DSL-like access to
+methods in the TUWF object:
+
+  # Get the client IP:
+  my $remote_ip = tuwf->reqIP;
+
+  # Send a 404 response:
+  tuwf->resNotFound;
+
+
 
 =head1 GLOBAL FUNCTIONS
 
