@@ -5,7 +5,6 @@
 use strict;
 use warnings;
 
-
 # This is a trick I always use to get the absolute path of a file if we only
 # know its location relative to the location of this script. It does not rely
 # on getcwd() or environment variables, and thus works quite well.
@@ -22,33 +21,10 @@ use lib $ROOT.'/lib';
 # load TUWF and import all html functions
 use TUWF ':html';
 
-TUWF::set(debug => 1);
+TUWF::set debug => 1;
 
-# "register" URIs, and map them to a function
-TUWF::register(
-  # an empty regex only matches the 'root' page (/)
-  qr// => \&home,
-
-  # and this regex matches all URIs below /sub/, and passes the part after
-  # /sub/ as the second argument to subpage().
-  qr/sub\/(?<capturename>.*)/ => \&subpage,
-
-  qr{api/echo\.json} => \&echoapi,
-
-  # all requests for non-registered URIs will throw a 404
-);
-
-
-# "run" the framework. The script will now accept requests either through CGI
-# or FastCGI.
-TUWF::run();
-
-
-sub home {
-  # first argument of any function called by TUWF is the global object, commonly
-  # called "$self", since it is also the object that you build your code upon.
-  my $self = shift;
-
+# Register a handle for the root path, i.e. "GET /"
+TUWF::get '/' => sub {
   # Generate an overly simple html page
   html;
    body;
@@ -61,24 +37,25 @@ sub home {
     end;
    end;
   end;
-}
+};
 
 
-sub subpage {
-  my($self, $uri) = @_;
-  
+# Register a route handler for "GET /sub/*"
+TUWF::get qr{/sub/(?<capturename>.*)} => sub {
   # output a plain text file containing $uri
-  $self->resHeader('Content-Type' => 'text/plain; charset=UTF-8');
-  lit $uri;
-  lit "\n";
+  tuwf->resHeader('Content-Type' => 'text/plain; charset=UTF-8');
   lit tuwf->capture(1);
   lit "\n";
   lit tuwf->capture('capturename');
-}
+};
 
 
-sub echoapi {
+# Register a handler for "POST /api/echoapi.json"
+TUWF::post '/api/echoapi.json' => sub {
   tuwf->resJSON(tuwf->reqJSON);
-}
+};
 
 
+# "run" the framework. The script will now accept requests either through CGI,
+# FastCGI, or run as a standalone server.
+TUWF::run();

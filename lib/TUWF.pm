@@ -139,10 +139,31 @@ sub run {
 }
 
 
-# Maps URLs to handlers
+# Maps URLs to handlers (legacy)
 sub register {
-  push @handlers, @_;
+  my $a = \@_;
+  for my $i (0..$#$a/2) {
+    push @handlers,
+      qr{^(?:GET|POST|HEAD) /$a->[$i*2]$},
+      sub { $a->[$i*2+1]->($OBJ, @{$OBJ->{_TUWF}{captures_pos}}) }
+  }
 }
+
+
+# Register router handlers
+sub any {
+  my($methods, $path, $sub) = @_;
+  my $methods_re = '(?:' . join('|', map uc, @$methods). ')';
+  my $path_re = ref $path eq 'Regexp' ? $path : quotemeta $path;
+  push @handlers, qr{^$methods_re $path_re$}, $sub;
+}
+
+sub get     ($&) { any ['get','head'], @_ }
+sub post    ($&) { any ['post'      ], @_ }
+sub del     ($&) { any ['delete'    ], @_ }
+sub options ($&) { any ['options'   ], @_ }
+sub put     ($&) { any ['put'       ], @_ }
+sub patch   ($&) { any ['patch'     ], @_ }
 
 
 # Load modules
@@ -172,19 +193,19 @@ sub load_recursive {
 
 
 # the default error handlers are quite ugly and generic...
-sub _error_400 { _very_simple_page($_[0], 400, '400 - Bad Request', 'Only UTF-8 encoded data is accepted.') }
-sub _error_404 { _very_simple_page($_[0], 404, '404 - Page Not Found', 'The page you were looking for does not exist...') }
-sub _error_405 { _very_simple_page($_[0], 405, '405 - Method not allowed', 'The only allowed methods are: HEAD, GET or POST.') }
-sub _error_413 { _very_simple_page($_[0], 413, '413 - Request Entity Too Large', 'You were probably trying to upload a too large file.') }
-sub _error_500 { _very_simple_page($_[0], 500, '500 - Internal Server Error', 'Oops! Looks like something went wrong on our side.') }
+sub _error_400 { _very_simple_page(400, '400 - Bad Request', 'Only UTF-8 encoded data is accepted.') }
+sub _error_404 { _very_simple_page(404, '404 - Page Not Found', 'The page you were looking for does not exist...') }
+sub _error_405 { _very_simple_page(405, '405 - Method not allowed', 'The only allowed methods are: HEAD, GET or POST.') }
+sub _error_413 { _very_simple_page(413, '413 - Request Entity Too Large', 'You were probably trying to upload a too large file.') }
+sub _error_500 { _very_simple_page(500, '500 - Internal Server Error', 'Oops! Looks like something went wrong on our side.') }
 
 # a simple and ugly page for error messages
 sub _very_simple_page {
-  my($s, $code, $title, $msg) = @_;
-  $s->resInit;
-  $s->resStatus($code);
-  $s->resHeader(Allow => 'GET, HEAD, POST') if $code == 405;
-  my $fd = $s->resFd;
+  my($code, $title, $msg) = @_;
+  $OBJ->resInit;
+  $OBJ->resStatus($code);
+  $OBJ->resHeader(Allow => 'GET, HEAD, POST') if $code == 405;
+  my $fd = $OBJ->resFd;
   print $fd <<__;
 <!DOCTYPE html
   PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
@@ -288,15 +309,15 @@ sub _handle_request {
     return 1 if $self->{_TUWF}{pre_request_handler} && !$self->{_TUWF}{pre_request_handler}->($self);
 
     # find the handler
-    (my $loc = $self->reqPath) =~ s/^\///;
+    my $loc = sprintf '%s %s', $self->reqMethod(), $self->reqPath();
     study $loc;
     my $han = $self->{_TUWF}{error_404_handler};
     $self->{_TUWF}{captures_pos} = [];
     $self->{_TUWF}{captures_named} = {};
     for (@handlers ? 0..$#handlers/2 : ()) {
-      if($loc =~ /^$handlers[$_*2]$/) {
+      if($loc =~ $handlers[$_*2]) {
         $self->{_TUWF}{captures_pos} = [
-            map defined $-[$_] ? substr $loc, $-[$_], $+[$_]-$-[$_] : undef, 1..$#-
+          map defined $-[$_] ? substr $loc, $-[$_], $+[$_]-$-[$_] : undef, 1..$#-
         ];
         $self->{_TUWF}{captures_named} = { %+ };
         $han = $handlers[$_*2+1];
@@ -305,7 +326,7 @@ sub _handle_request {
     }
 
     # execute handler
-    $han->($self, @{$self->{_TUWF}{captures_pos}});
+    $han->($self);
 
     # execute post request handler, if any
     $self->{_TUWF}{post_request_handler}->($self) if $self->{_TUWF}{post_request_handler};

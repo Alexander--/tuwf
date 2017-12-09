@@ -47,14 +47,17 @@ injection!
 
 =head2 reqPosts(name)
 
-Behaves the same as C<reqGets()>, but fetches the information from the POST
-data of the request instead. Unlike many CGI libraries, C<reqPost()> will
-B<not> return the file contents when the parameter comes from a file upload
-input element, instead, it will return the file name.
+Behaves the same as C<reqGets()>, but fetches the information from the body of
+the request instead. Unlike many CGI libraries, C<reqPost()> will B<not> return
+the file contents when the parameter comes from a file upload input element,
+instead, it will return the file name.
+
+Contrary to its name, this method also works for I<PUT> and I<PATCH> requests,
+if they have a body with a supported content type,
 
 =head2 reqPost(name)
 
-Behaves the same as C<reqGet()>, but for POST data.
+Behaves the same as C<reqGet()>, but for the request body.
 
 =head2 reqParams(name)
 
@@ -146,7 +149,8 @@ For example:
 
 =head2 reqMethod()
 
-Returns the HTTP request method. Can be either C<HEAD>, C<GET> or C<POST>.
+Returns the HTTP request method. Can be either C<DELETE>, C<GET>, C<HEAD>,
+C<OPTIONS>, C<PATCH>, C<POST> or C<PUT>.
 
 =head2 reqHeader(name)
 

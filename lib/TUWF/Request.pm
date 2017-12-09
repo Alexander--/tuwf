@@ -36,13 +36,13 @@ sub reqInit {
   die $@ if !$err;
 
   my $meth = $self->reqMethod;
-  return 'method' if $meth !~ /^(GET|POST|HEAD)$/;
+  return 'method' if $meth !~ /^(GET|POST|HEAD|DEL|OPTIONS|PUT|PATCH)$/;
 
-  if($meth eq 'POST' && $ENV{CONTENT_LENGTH}) {
+  if($meth =~ /^(POST|PUT|PATCH)$/ && $ENV{CONTENT_LENGTH}) {
     return 'maxpost' if $self->{_TUWF}{max_post_body} && $ENV{CONTENT_LENGTH} > $self->{_TUWF}{max_post_body};
 
     my $data;
-    die "Couldn't read all POST data.\n" if $ENV{CONTENT_LENGTH} > read STDIN, $data, $ENV{CONTENT_LENGTH}, 0;
+    die "Couldn't read all request data.\n" if $ENV{CONTENT_LENGTH} > read STDIN, $data, $ENV{CONTENT_LENGTH}, 0;
 
     $err = eval {
       if(($ENV{'CONTENT_TYPE'}||'') =~ m{^application/json(?:;.*)?$}) {

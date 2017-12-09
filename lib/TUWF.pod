@@ -232,6 +232,56 @@ methods in the TUWF object:
 The main TUWF namespace contains several functions used to initialize the
 framework and register the callbacks for your website.
 
+=head2 TUWF::any(\@methods, $path, $sub)
+
+Register a method and path to a subroutine. I<@methods> is an array of HTTP
+methods to accept. C<$path> can either be a literal string or a regexp. C<$sub>
+is called on incoming HTTP requests if the method is in the given array and if
+the C<$path> fully matches L<reqPath()|TUWF::Request>. It is common to use the
+C<qr{}> operator to quote the regex, which prevents you from having to escape
+slashes in the path as would be required with C<qr//>. If there are multiple
+route handlers that match a single request, then the one that has been
+registered first will be called. HTTP methods are case-insensitive. If the
+C<$path> is a regex, then the pattern groups will be available through
+L<< tuwf->capture |/capture(key) >>.
+
+  TUWF::any ['post'], '/', sub {
+    # This code will be called on a "POST /"
+  };
+
+  TUWF::any ['get'], '/literal.json', sub {
+    # This code will be called on "GET /literal.json"
+    # But NOT on "GET /literalXjson"
+  };
+
+  TUWF::any ['get'], qr{/regex.json}, sub {
+    # This code will be called on "GET /regex.json"
+    # And also on "GET /regexXjson"
+  };
+
+  TUWF::any ['get','head'], qr{/user/(?<uid>\d+)}, sub {
+    # This code will be called on a "GET /user/123".
+    # The user's ID will be available in
+    #   tuwf->capture('uid')
+    # And
+    #   tuwf->capture(1);
+  };
+
+=head2 TUWF::del($path, $sub)
+
+Register a handler for C<DELETE $path>. Equivalent to C<TUWF::any(['delete'], @_)>.
+
+=head2 TUWF::get($path, $sub)
+
+Register a handler for C<GET> and C<HEAD> on C<$path>. Equivalent to
+C<TUWF::any(['get','head'], @_)>.
+
+  TUWF::get '/', sub { ... };
+
+  TUWF::get qr{/game/(.*)}, sub {
+    my $gameid = tuwf->capture(1);
+  };
+
 =head2 TUWF::load(@modules)
 
 Loads the listed module names and imports their exported functions to the
@@ -261,32 +311,40 @@ Works the same as C<TUWF::load()>, but this also loads all submodules.
 
 Note that all submodules must be in the same parent directory in C<@INC>.
 
+=head2 TUWF::options($path, $sub)
+
+Register a handler for C<OPTIONS $path>. Equivalent to C<TUWF::any(['options'], @_)>.
+
+=head2 TUWF::patch($path, $sub)
+
+Register a handler for C<PATH $path>. Equivalent to C<TUWF::any(['patch'], @_)>.
+
+=head2 TUWF::post($path, $sub)
+
+Register a handler for C<POST $path>. Equivalent to C<TUWF::any(['post'], @_)>.
+
+=head2 TUWF::put($path, $sub)
+
+Register a handler for C<PUT $path>. Equivalent to C<TUWF::any(['put'], @_)>.
+
 =head2 TUWF::register(regex => subroutine, ..)
 
-Maps a URI to a function. The I<regex> is matched to L<reqPath()|TUWF::Request>
-and must match the path from the begin to the end.  (That is, the regex is used
-between C<^> and C<$> marks). The leading slash of the path is removed before
-matching, so these should be omitted in the regexes. It is common to use the
-C<qr{}> operator to quote the regex, which prevents you from having to escape
-slashes in the path as would be required with C<qr//>.
+This is a legacy function, and only exists for backwards compatibility. It is
+similar to C<TUWF::any()>, with the following differences:
 
-All registered regexes are matched against any incoming URI, and the subroutine
-corresponding to the first matched regex will be called to handle the request.
-The first argument to the subroutine will be the main TUWF object. If the
-regular expression has capture buffers, these will also be provided as
-additional arguments.
+=over
 
-  TUWF::register(
-    # empty regex = root URI (/)
-    # myhomepage() will be called with the main TUWF object
-    qr{}  => \&myhomepage,
-  
-    # The following will match on any /user/<numeric-id> URI.
-    # userpage() will be called with
-    # - the TUWF object and
-    # - the id-part of the URI ($1 in the regular expression)
-    qr{user/(\d+)} => \&userpage,
-  );
+=item * C<register> supports multiple registrations in a single call.
+
+=item * C<register> only matches on 'GET', 'HEAD' and 'POST'.
+
+=item * The path argument to C<register> is always interpreted as a regex, literal strings need to be manually escaped.
+
+=item * The path argument to C<register> matches C<< tuwf->reqPath >> without the leading slash.
+
+=item * Regex captures are passed to the subroutine as additional arguments.
+
+=back
 
 =head2 TUWF::set(key => value, ..)
 
