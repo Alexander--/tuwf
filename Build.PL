@@ -9,7 +9,7 @@ Module::Build->new(
   dist_abstract => 'The Ultimate Website Framework',
   license       => 'mit',
   requires => {
-    perl => '5.8.0',
+    perl => '5.10.0',
   },
   recommends => {
     'DBI'                  => 0,

@@ -507,6 +507,24 @@ TUWF object provides many other methods as well, which are implemented and
 documented in the various sub-modules. See the documentation of each sub-module
 for the methods it provides.
 
+=head2 capture(key)
+
+Returns the capture group from the route regex. Both positional captures and
+named captures can be used, for example:
+
+  TUWF::register(qr{user/(?<uid>[1-9][0-9]*)} => sub {
+    my($self, $uid) = @_;
+
+    # capture(1) is equivalent to $1 from the regex.
+    $self->capture(1) == $uid;
+
+    # capture('uid') is equivalent to $+{uid} from the regex.
+    $self->capture('uid') == $uid;
+  });
+
+Note that C<captures(0)> is not available; This would be equivalent to
+C<< $self->reqPath >>, save for the leading slash.
+
 =head2 debug()
 
 Returns the value of the I<debug> setting.

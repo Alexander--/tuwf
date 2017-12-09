@@ -286,17 +286,21 @@ sub _handle_request {
     (my $loc = $self->reqPath) =~ s/^\///;
     study $loc;
     my $han = $self->{_TUWF}{error_404_handler};
-    my @args;
+    $self->{_TUWF}{captures_pos} = [];
+    $self->{_TUWF}{captures_named} = {};
     for (@handlers ? 0..$#handlers/2 : ()) {
       if($loc =~ /^$handlers[$_*2]$/) {
-        @args = map defined $-[$_] ? substr $loc, $-[$_], $+[$_]-$-[$_] : undef, 1..$#- if $#-;
+        $self->{_TUWF}{captures_pos} = [
+            map defined $-[$_] ? substr $loc, $-[$_], $+[$_]-$-[$_] : undef, 1..$#-
+        ];
+        $self->{_TUWF}{captures_named} = { %+ };
         $han = $handlers[$_*2+1];
         last;
       }
     }
 
     # execute handler
-    $han->($self, @args);
+    $han->($self, @{$self->{_TUWF}{captures_pos}});
 
     # execute post request handler, if any
     $self->{_TUWF}{post_request_handler}->($self) if $self->{_TUWF}{post_request_handler};
@@ -359,6 +363,14 @@ sub _handle_request {
 # convenience function
 sub debug {
   return shift->{_TUWF}{debug};
+}
+
+
+sub capture {
+  my($self, $key) = @_;
+  $key =~ /^[0-9]+$/
+    ? $self->{_TUWF}{captures_pos}[$key-1]
+    : $self->{_TUWF}{captures_named}{$key};
 }
 
 

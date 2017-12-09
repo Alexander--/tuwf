@@ -31,7 +31,7 @@ TUWF::register(
 
   # and this regex matches all URIs below /sub/, and passes the part after
   # /sub/ as the second argument to subpage().
-  qr/sub\/(.*)/ => \&subpage,
+  qr/sub\/(?<capturename>.*)/ => \&subpage,
 
   qr{api/echo\.json} => \&echoapi,
 
@@ -70,6 +70,10 @@ sub subpage {
   # output a plain text file containing $uri
   $self->resHeader('Content-Type' => 'text/plain; charset=UTF-8');
   lit $uri;
+  lit "\n";
+  lit $self->capture(1);
+  lit "\n";
+  lit $self->capture('capturename');
 }
 
 
