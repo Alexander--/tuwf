@@ -381,7 +381,7 @@ sub _handle_request {
     my($sqlt, $sqlc) = (0, 0);
     if($self->{_TUWF}{db_login}) {
       $sqlc = grep $_->[0] ne 'ping/rollback' && $_->[0] ne 'commit', @{$self->{_TUWF}{DB}{queries}};
-      $sqlt += $_->[1]*1000 for (@{$self->{_TUWF}{DB}{queries}});
+      $sqlt += $_->[2]*1000 for (@{$self->{_TUWF}{DB}{queries}});
     }
 
     $self->log(sprintf('%4dms (SQL:%4dms,%3d qs)', $time, $sqlt, $sqlc));
