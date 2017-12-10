@@ -282,6 +282,35 @@ C<TUWF::any(['get','head'], @_)>.
     my $gameid = tuwf->capture(1);
   };
 
+=head2 TUWF::hook($hook, $sub)
+
+Add a hook. This allows you to run a piece of code before or after a request
+handler. Hooks are run in the same order as they are registered. The following
+hooks are supported:
+
+=over
+
+=item before
+
+Your subroutine will be called before the request handler. The subroutine
+B<must> return a true value to indicate that TUWF can continue processing the
+request as usual. If the subroutine returns false, TUWF will assume the
+subroutine has generated a response and will halt any further processing. This
+hook can be used used to initialize or reset request-specific data (such as
+authentication), or to perform some checks that should apply to every route.
+
+This replaces the L<pre_request_handler|/pre_request_handler> setting.
+
+=item after
+
+Called after the request handler has run, but before the result has been sent
+to the client. This hook is always called, even if a I<before> hook has
+returned false or if a route handler threw an exception.
+
+This replaces the L<post_request_handler|/post_request_handler> setting.
+
+=back
+
 =head2 TUWF::load(@modules)
 
 Loads the listed module names and imports their exported functions to the
@@ -425,6 +454,8 @@ data did not make sense to TUWF. In the current implementation, this only
 happens when the request data contains non-UTF8-encoded text. A warning is
 written to the log file when this happens.
 
+B<WARNING:> The warning of L</error_500_handler> applies here as well.
+
 =item error_404_handler
 
 Set this to a subroutine reference if you want to write your own 404 error
@@ -440,10 +471,14 @@ overriding the default 405 error page makes little sense in most situations. If
 you do override it, do not forget to add an C<Allow> HTTP header to the
 response, as required by the HTTP standard.
 
+B<WARNING:> The warning of L</error_500_handler> applies here as well.
+
 =item error_413_handler
 
 Similar to I<error_404_handler>, but is called when the POST body exceeds the
 configured I<max_post_body>.
+
+B<WARNING:> The warning of L</error_500_handler> applies here as well.
 
 =item error_500_handler
 
@@ -453,6 +488,11 @@ the error message as second argument. When I<logfile> is set, a detailed error
 report will be written to the log. It is recommended to ignore the error
 message passed to your subroutine and to enable the log file, so you won't risk
 sending sensitive information to your visitors.
+
+B<WARNING:> When this handler is called, the database and request objects may
+not be in a usable state. This handler may also be called before any of the
+hooks have been run. It's best to keep this handler as simple as possible, and
+only have it generate a friendly response.
 
 =item http_server_port
 
@@ -528,19 +568,15 @@ The default MIME type for extensions not covered in L<mime_types|/mime_types>.
 
 =item pre_request_handler
 
-Set to a subroutine reference if you want to perform some actions before TUWF
-calls your URI handling function. The subroutine B<must> return a true value to
-indicate that TUWF can continue processing the request as usual. If the
-subroutine returns false, TUWF will assume the subroutine has generated a
-response and will halt any further processing. This callback is often used
-for initializing or resetting request-specific data, and parsing cookies or
-other request data to set preferences or session information.
+(Deprecated) Equivalent to a I<before> hook, see
+L<TUWF::hook()|/TUWF::hook($hook, $sub)>.
 
 =item post_request_handler
 
-Similar to I<post_request_handler>, except it will be called after the request
-has been processed but before it has been sent to the client. This callback
-will not be called if any of the functions before threw an exception.
+(Deprecated) Equivalent to an I<after> hook, see
+L<TUWF::hook()|/TUWF::hook($hook, $sub)>. One notable difference is that this
+callback will B<not> run when a I<before> hook returned false or if a route
+handler threw an exception.
 
 =item validate_templates
 

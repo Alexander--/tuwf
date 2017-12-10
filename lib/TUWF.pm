@@ -19,6 +19,10 @@ our $VERSION = '1.1';
 our $OBJ = bless {
   _TUWF => {
     route_handlers => [],
+    hooks => {
+      before => [],
+      after => [],
+    },
     # defaults
     mail_from => '<noreply-yawf@blicky.net>',
     mail_sendmail => '/usr/sbin/sendmail',
@@ -168,6 +172,14 @@ sub put     ($&) { any ['put'       ], @_ }
 sub patch   ($&) { any ['patch'     ], @_ }
 
 
+sub hook ($&) {
+  my($hook, $sub) = @_;
+  croak "Unknown hook: $hook" if $hook ne 'before' && $hook ne 'after';
+  croak 'Hooks expect a subroutine as second argument' if ref $sub ne 'CODE';
+  push @{$OBJ->{_TUWF}{hooks}{$hook}}, $sub;
+}
+
+
 # Load modules
 sub load {
   $OBJ->_load_module($_) for (@_);
@@ -282,6 +294,15 @@ sub _handle_request {
   # put everything in an eval to catch any error, even
   # those caused by a TUWF core module
   my $eval = eval {
+    # initialze response
+    $self->resInit();
+
+    # initialize TUWF::XML
+    TUWF::XML->new(
+      write  => sub { print { $self->resFd } $_ for @_ },
+      pretty => $self->{_TUWF}{xml_pretty},
+      default => 1,
+    );
 
     # initialize request
     my $err = $self->reqInit();
@@ -294,21 +315,16 @@ sub _handle_request {
       return 1;
     }
 
-    # initialze response
-    $self->resInit();
-
-    # initialize TUWF::XML
-    TUWF::XML->new(
-      write  => sub { print { $self->resFd } $_ for @_ },
-      pretty => $self->{_TUWF}{xml_pretty},
-      default => 1,
-    );
-
     # make sure our DB connection is still there and start a new transaction
     $self->dbCheck() if $self->{_TUWF}{db_login};
 
     # call pre request handler, if any
     return 1 if $self->{_TUWF}{pre_request_handler} && !$self->{_TUWF}{pre_request_handler}->($self);
+
+    # run 'before' hooks
+    for (@{$self->{_TUWF}{hooks}{before}}) {
+      return 1 if !$_->();
+    }
 
     # find the handler
     my $loc = sprintf '%s %s', $self->reqMethod(), $self->reqPath();
@@ -333,15 +349,29 @@ sub _handle_request {
 
     # execute post request handler, if any
     $self->{_TUWF}{post_request_handler}->($self) if $self->{_TUWF}{post_request_handler};
-
-    # commit changes
-    $self->dbCommit if $self->{_TUWF}{db_login};
     1;
   };
+  my $evalerr = $@;
+
+  # always run 'after' hooks
+  my $cleanup = eval {
+    $_->() for (@{$self->{_TUWF}{hooks}{after}});
+    1;
+  };
+  my $cleanuperr = $@;
+
+  # commit changes if everything went okay
+  my $commit = eval {
+    if($eval && $cleanup && $self->{_TUWF}{db_login}) {
+      $self->dbCommit;
+    }
+    1;
+  };
+  my $commiterr = $@;
 
   # error handling
-  if(!$eval) {
-    chomp( my $err = $@ );
+  if(!$eval || !$cleanup || !$commit) {
+    chomp( my $err = $evalerr || $cleanuperr || $commiterr );
 
     # act as if the changes to the DB never happened
     warn $@ if $self->{_TUWF}{db_login} && !eval { $self->dbRollBack; 1 };
