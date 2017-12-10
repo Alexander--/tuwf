@@ -18,6 +18,7 @@ our $VERSION = '1.1';
 #    a mod_perl environment, which we don't support.
 our $OBJ = bless {
   _TUWF => {
+    route_handlers => [],
     # defaults
     mail_from => '<noreply-yawf@blicky.net>',
     mail_sendmail => '/usr/sbin/sendmail',
@@ -69,8 +70,6 @@ our $OBJ = bless {
     http_server_port => $ENV{TUWF_HTTP_SERVER_PORT}||3000,
   }
 }, 'TUWF::Object';
-
-my @handlers;
 
 
 sub import {
@@ -143,7 +142,7 @@ sub run {
 sub register {
   my $a = \@_;
   for my $i (0..$#$a/2) {
-    push @handlers,
+    push @{$OBJ->{_TUWF}{route_handlers}},
       qr{^(?:GET|POST|HEAD) /$a->[$i*2]$},
       sub { $a->[$i*2+1]->($OBJ, @{$OBJ->{_TUWF}{captures_pos}}) }
   }
@@ -153,9 +152,12 @@ sub register {
 # Register router handlers
 sub any {
   my($methods, $path, $sub) = @_;
+  croak 'Methods argument in route registration must be an array' if ref $methods ne 'ARRAY';
+  croak 'Path argument in route registration must be a string or regex' if ref $path && ref $path ne 'Regexp';
+  croak 'Subroutine argument in route registration must be a code reference' if ref $sub ne 'CODE';
   my $methods_re = '(?:' . join('|', map uc, @$methods). ')';
   my $path_re = ref $path eq 'Regexp' ? $path : quotemeta $path;
-  push @handlers, qr{^$methods_re $path_re$}, $sub;
+  push @{$OBJ->{_TUWF}{route_handlers}}, qr{^$methods_re $path_re$}, $sub;
 }
 
 sub get     ($&) { any ['get','head'], @_ }
@@ -314,13 +316,14 @@ sub _handle_request {
     my $han = $self->{_TUWF}{error_404_handler};
     $self->{_TUWF}{captures_pos} = [];
     $self->{_TUWF}{captures_named} = {};
-    for (@handlers ? 0..$#handlers/2 : ()) {
-      if($loc =~ $handlers[$_*2]) {
+    my $handlers = $self->{_TUWF}{route_handlers};
+    for (@$handlers ? 0..$#$handlers/2 : ()) {
+      if($loc =~ $handlers->[$_*2]) {
         $self->{_TUWF}{captures_pos} = [
           map defined $-[$_] ? substr $loc, $-[$_], $+[$_]-$-[$_] : undef, 1..$#-
         ];
         $self->{_TUWF}{captures_named} = { %+ };
-        $han = $handlers[$_*2+1];
+        $han = $handlers->[$_*2+1];
         last;
       }
     }
