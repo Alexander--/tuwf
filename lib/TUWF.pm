@@ -463,7 +463,7 @@ package TUWF::http;
 
 use strict;
 use warnings;
-use base qw{
+our @ISA = qw{
     HTTP::Server::Simple
     HTTP::Server::Simple::CGI::Environment
 };
