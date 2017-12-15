@@ -203,6 +203,7 @@ sub sqlprint { # query, bind values. Returns new query + bind values
 # ('private_tuwf' in this case).
 sub inject_logging {
   require DBI;
+  no warnings 'redefine';
 
   # The measured SQL timing only includes that of the execute() call, but it's
   # likely that some query processing also happens during fetching.
