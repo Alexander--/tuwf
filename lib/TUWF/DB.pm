@@ -137,7 +137,7 @@ sub sqlhelper { # type, query, @list
   };
 
   # re-throw the error in the context of the calling code
-  croak $self->dbh->errstr if !$ret;
+  croak($self->dbh->errstr || $@) if !$ret;
 
   $r = 0  if $type == 0 && (!$r || $r == 0);
   $r = {} if $type == 1 && (!$r || ref($r) ne 'HASH');
@@ -219,7 +219,7 @@ sub inject_logging {
 
     if($self->{Database}{private_tuwf}) {
       my $time = time - $start;
-      my %params = %{$self->{ParamValues}};
+      my %params = %{$self->{ParamValues} || {}};
 
       $TUWF::OBJ->log(sprintf
         '[%7.2fms] %s | %s',
