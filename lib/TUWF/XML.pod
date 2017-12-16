@@ -33,6 +33,13 @@ The functional interface looks like this:
   use TUWF ':html';
   
   TUWF::XML->new(default => 1);
+  html sub {
+   head sub {
+    title 'Document title!';
+   };
+  };
+
+  # -- or, in more imperative style:
   html;
    head;
     title 'Document title!';
@@ -45,6 +52,13 @@ And the equivalent, using the object interface:
   use TUWF::XML;
   
   my $xml = TUWF::XML->new();
+  $xml->html(sub {
+   $xml->head(sub {
+    $xml->title('Document title!');
+   });
+  });
+
+  # -- or, again in more imperative style:
   $xml->html;
    $xml->head;
     $xml->title('Document title!');
@@ -151,13 +165,12 @@ C<lang> and C<xml:lang> attribute for the html open tag.
 
 =item I<anything else>
 
-Any option besides I<doctype> and I<lang> is added as attribute to html open
-tag.
+All other arguments are passed to C<tag()>.
 
 =back
 
-Since this opens an C<E<lt>htmlE<gt>> tag, it should be closed with an
-C<end()>.
+If you don't pass a I<contents> argument to this function, you should take care
+to close the C<< <html> >> tag with an C<end()>.
 
 =head2 tag(name, attribute => value, .., contents)
 
@@ -166,9 +179,11 @@ attributes can be specified after that with key/value pairs and finally the
 contents can be specified. If the I<contents> argument is not present, an open
 tag will be generated, which should be closed later on using C<end()>. If
 I<contents> is present but undef, the generated tag will be self-closing, i.e.
-it will end with a C</E<gt>> instead of a regular C<E<gt>>. If I<contents> is
-present and not undef, it will be used as the contents of the tag, after which
-the tag will be closed with a closing tag (C<E<lt>/tagnameE<gt>>).
+it will end with a C</E<gt>> instead of a regular C<E<gt>>. If I<contents> is a
+scalar, it will be used as the contents of the tag, after which the tag will be
+closed with a closing tag (C<E<lt>/tagnameE<gt>>). If I<contents> is a CODE
+reference, the subroutine will be called in between the start tag and the
+closing tag.
 
 The tag name and attribute names are outputted as-is, after some very basic
 validation. The attribute values and contents are passed through
@@ -197,11 +212,31 @@ Some example function calls and their output:
   lit '</content>';
   # except tag() can do pretty-printing when requested
 
+  tag 'div', sub {
+    tag 'a', href => '/', 'Home';
+  };
+  # <div><a href="/">Home</a></div>
+
 =head2 end(name)
 
 Closes the last tag opened by C<tag()> or C<html()>. The I<name> argument is
 optional, when given, it will be used as validation. If the given I<name> does
 not equal the last opened tag, an error is thrown.
+
+Usage of this function is discouraged, as it may not be easy keep track of
+which C<end()> belongs to which C<tag()>. An easier and more functional
+approach is to not use C<end()> at all, and instead give a CODE reference to
+C<tag()>. For example:
+
+  tag 'body';
+    tag 'b', 'text';
+  end;
+
+Is more safely written as:
+
+  tag 'body', sub {
+    tag 'b', 'text';
+  };
 
 =head2 <xhtml-tag>(attribute => value, .., contents)
 

@@ -26,17 +26,19 @@ TUWF::set debug => 1;
 # Register a handle for the root path, i.e. "GET /"
 TUWF::get '/' => sub {
   # Generate an overly simple html page
-  html;
-   body;
+  html sub {
+   body sub {
     h1 'Hello World!';
     p 'Check out the following awesome links!';
-    ul;
+    ul sub {
      for (qw|awesome cool etc|) {
-       li; a href => "/sub/$_", $_; end;
+       li sub {
+        a href => "/sub/$_", $_;
+       };
      }
-    end;
-   end;
-  end;
+    };
+   };
+  };
 };
 
 

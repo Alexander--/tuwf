@@ -119,7 +119,9 @@ sub txt {
 #  'tagname'                           <tagname>
 #  'tagname', id => "main"             <tagname id="main">
 #  'tagname', '<bar>'                  <tagname>&lt;bar&gt;</tagname>
+#  'tagname', sub { .. }               <tagname>..</tagname>
 #  'tagname', id => 'main', '<bar>'    <tagname id="main">&lt;bar&gt;</tagname>
+#  'tagname', id => 'main', sub { .. } <tagname id="main">..</tagname>
 #  'tagname', id => 'main', undef      <tagname id="main" />
 #  'tagname', undef                    <tagname />
 sub tag {
@@ -136,11 +138,14 @@ sub tag {
   }
 
   if(!@_) {
-    $t .= '>';
-    $s->lit($t);
+    $s->lit($t.'>');
     push @{$s->{stack}}, $name;
   } elsif(!defined $_[0]) {
     $s->lit($t.' />');
+  } elsif(ref $_[0] eq 'CODE') {
+    $s->lit($t.'>');
+    $_[0]->();
+    $s->lit('</'.$name.'>');
   } else {
     $s->lit($t.'>'.xml_escape(shift).'</'.$name.'>');
   } 
@@ -161,6 +166,8 @@ sub end {
 
 sub html {
   my $s = ref($_[0]) eq __PACKAGE__ ? shift : $OBJ;
+  my $hascontent = @_ % 2 == 1;
+  my $c = $hascontent && pop;
   my %o = @_;
 
   $s->lit($doctypes{ delete($o{doctype}) || 'xhtml1-strict' }."\n");
@@ -168,7 +175,8 @@ sub html {
   $s->tag('html',
     xmlns => 'http://www.w3.org/1999/xhtml',
     $lang ? ('xml:lang' => $lang, lang => $lang) : (),
-    %o
+    %o,
+    $hascontent ? ($c) : ()
   );
 }
 
