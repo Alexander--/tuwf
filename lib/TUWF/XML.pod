@@ -143,7 +143,7 @@ Since this function does not open a tag, it does not have to be C<end()>'ed.
 
 =head2 html(options)
 
-Writes an XHTML doctype and opens an C<E<lt>htmlE<gt>> tag. Accepts the
+Writes an (X)HTML doctype and opens an C<E<lt>htmlE<gt>> tag. Accepts the
 following options:
 
 =over
@@ -153,15 +153,15 @@ following options:
 Specify the doctype to use. Can be one of the following:
 
   xhtml1-strict xhtml1-transitional xhtml1-frameset
-  xhtml11 xhtml-basic11 xhtml-math-svg
+  xhtml11 xhtml-basic11 xhtml-math-svg html5
 
 These refer to the doctypes found at
-L<http://www.w3.org/QA/2002/04/valid-dtd-list.html>. Default: xhtml1-strict.
+L<http://www.w3.org/QA/2002/04/valid-dtd-list.html>. Default: html5.
 
 =item lang
 
 Specifies the (human) language of the generated content. This will generate a
-C<lang> and C<xml:lang> attribute for the html open tag.
+C<lang> (and C<xml:lang> for XHTML) attribute for the html open tag.
 
 =item I<anything else>
 
