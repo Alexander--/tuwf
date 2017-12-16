@@ -112,6 +112,24 @@ the control on where to (not) insert whitespace. Default: 0 (disabled).
 
 =back
 
+=head2 mkclass(%classes)
+
+Dynamically constructs a I<class> attribute, which can be passed to C<tag()>
+and friends. This function accepts a hash where the keys are the class names
+and the value indicates whether the class is enabled or not. This function
+returns an empty list if none of the classes are enabled, or returns
+C<< (class => $list_of_enabled_classes) >>.
+
+This is convenient when the classes are dependant on other variables, e.g.:
+
+  tag 'div', mkclass(hidden => $is_hidden, warning => $is_warning), 'Text';
+  # Output:
+  #  !$is_hidden && !$is_warning:  <div>Text</div>
+  #  $is_hidden && !$is_warning:   <div class="hidden">Text</div>
+  #  $is_hidden && $is_warning:    <div class="hidden warning">Text</div>
+
+Note that the order in which classes are returned may be somewhat random.
+
 =head2 xml_escape(string)
 
 Returns the XML-escaped string. The characters C<&>, C<E<lt>>, C<E<gt>> and

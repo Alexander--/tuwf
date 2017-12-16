@@ -19,7 +19,7 @@ use lib $ROOT.'/lib';
 
 
 # load TUWF and import all html functions
-use TUWF ':html5';
+use TUWF ':html5', 'mkclass';
 
 TUWF::set debug => 1;
 
@@ -33,7 +33,7 @@ TUWF::get '/' => sub {
       Ul sub {
         for (qw|awesome cool etc|) {
           Li sub {
-            A href => "/sub/$_", $_;
+            A href => "/sub/$_", mkclass(awesome => $_ eq 'awesome'), $_;
           };
         }
       };

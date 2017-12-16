@@ -56,7 +56,7 @@ BEGIN {
   my @htmlexport = (qw| html Html lit txt tag end |);
   my @xmlexport = qw| xml lit txt tag end |;
 
-  @EXPORT_OK = uniq @htmlexport, @html5tags, @htmltags, @xmlexport, 'xml_escape', 'html_escape';
+  @EXPORT_OK = uniq @htmlexport, @html5tags, @htmltags, @xmlexport, 'mkclass', 'xml_escape', 'html_escape';
   %EXPORT_TAGS = (
     html  => [ @htmlexport, @htmltags ],
     html5 => [ @htmlexport, @html5tags ],
@@ -94,6 +94,14 @@ sub new {
   $OBJ = $self if $o{default};
   return $self;
 };
+
+
+# Convenient function to generate a dynamic class attribute.
+sub mkclass {
+  my %c = @_;
+  my $c = join ' ', grep $c{$_}, keys %c;
+  return $c ? (class => $c) : ();
+}
 
 
 # XML escape (not a method)
