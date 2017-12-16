@@ -11,39 +11,56 @@ use Carp 'carp', 'croak';
 
 
 our $VERSION = '1.1';
-our(@EXPORT_OK, %EXPORT_TAGS, @htmltags, @htmlexport, @xmlexport, %htmlbool, $OBJ);
+our(@EXPORT_OK, %EXPORT_TAGS, $OBJ);
+
+# List::Util provides a uniq() since 1.45, but for some reason my Perl comes
+# with an even more ancient version.
+sub uniq { my %h = map +($_,1), @_; keys %h }
 
 
 BEGIN {
-  # xhtml 1.0 tags
-  @htmltags = qw|
+  my @htmltags = qw|
     a abbr acronym address area b base bdo big blockquote body br button caption
     cite code col colgroup dd del dfn div dl dt em fieldset form h1 h2 h3 h4 h5 h6
     head i img input ins kbd label legend li Link Map meta noscript object ol
     optgroup option p param pre q samp script Select small span strong style Sub
     sup table tbody td textarea tfoot th thead title Tr tt ul var
   |;
+  my @html5tags = qw|
+    A Abbr Address Area Article Aside Audio B Base Bb Bdo Blockquote Body Br
+    Button Canvas Caption Cite Code Col Colgroup Command Datagrid Datalist Dd
+    Del Details Dfn Dialog Div Dl Dt Em Embed Fieldset Figure Footer Form H1 H2
+    H3 H4 H5 H6 Head Header Hr I Iframe Img Input Ins Kbd Label Legend Li Link
+    Map Mark Menu Meta Meter Nav Noscript Object Ol Optgroup Option Output P
+    Param Pre Progress Q Rp Rt Ruby Samp Script Section Select Small Source
+    Span Strong Style Sub Sup Table Tbody Td Textarea Tfoot Th Thead Time Title
+    Tr Ul Var Video
+  |;
 
-  # boolean (self-closing) tags
-  %htmlbool = map +($_,1), qw| area base br img input Link param |;
-
-  # functions to export
-  @htmlexport = (@htmltags, qw| html lit txt tag end |);
-  @xmlexport = qw| xml lit txt tag end |;
+  # boolean/empty/self-closing tags
+  my %htmlbool = map +($_,1), qw{
+    area base br col command embed hr img input link meta param source
+  };
 
   # create the subroutines to map to the html tags
   no strict 'refs';
-  for my $e (@htmltags) {
+  for my $e (uniq @html5tags, @htmltags) {
+    my $le = lc $e;
     *{__PACKAGE__."::$e"} = sub {
       my $s = ref($_[0]) eq __PACKAGE__ ? shift : $OBJ;
-      $s->tag(lc($e), @_, $htmlbool{$e} && $#_%2 ? undef : ());
+      $s->tag($le, @_, $htmlbool{$le} && $#_%2 ? undef : ());
     }
   }
 
-  @EXPORT_OK = (@htmlexport, @xmlexport, 'xml_escape', 'html_escape');
+  # functions to export
+  my @htmlexport = (qw| html Html lit txt tag end |);
+  my @xmlexport = qw| xml lit txt tag end |;
+
+  @EXPORT_OK = uniq @htmlexport, @html5tags, @htmltags, @xmlexport, 'xml_escape', 'html_escape';
   %EXPORT_TAGS = (
-    html => \@htmlexport,
-    xml  => \@xmlexport,
+    html  => [ @htmlexport, @htmltags ],
+    html5 => [ @htmlexport, @html5tags ],
+    xml   => \@xmlexport,
   );
 };
 
@@ -188,6 +205,8 @@ sub html {
     $hascontent ? ($c) : ()
   );
 }
+
+*Html = \&html;
 
 
 # Writes an xml header, doesn't open an <xml> tag, and doesn't need an

@@ -19,25 +19,25 @@ use lib $ROOT.'/lib';
 
 
 # load TUWF and import all html functions
-use TUWF ':html';
+use TUWF ':html5';
 
 TUWF::set debug => 1;
 
 # Register a handle for the root path, i.e. "GET /"
 TUWF::get '/' => sub {
   # Generate an overly simple html page
-  html sub {
-   body sub {
-    h1 'Hello World!';
-    p 'Check out the following awesome links!';
-    ul sub {
-     for (qw|awesome cool etc|) {
-       li sub {
-        a href => "/sub/$_", $_;
-       };
-     }
+  Html sub {
+    Body sub {
+      H1 'Hello World!';
+      P 'Check out the following awesome links!';
+      Ul sub {
+        for (qw|awesome cool etc|) {
+          Li sub {
+            A href => "/sub/$_", $_;
+          };
+        }
+      };
     };
-   };
   };
 };
 

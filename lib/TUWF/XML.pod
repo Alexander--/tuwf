@@ -16,9 +16,10 @@ certainly help). You will still be writing HTML yourself, the only difference
 is that you use a more convenient syntax and you won't have to manually escape
 everything you output.
 
-The primary aim of this module was to generate XHTML, and since XHTML is a
-subset of XML, extending it to write XML was a small step. In fact, this module
-is basically an XML generator with convenience functions for XHTML.
+The primary aim of this module was to generate XHTML and HTML5, and since both
+can be expressed in proper XML, extending it to write XML was a small step. In
+fact, this module is basically an XML generator with convenience functions for
+HTML.
 
 This module provides two interfaces: a functional interface and an object
 interface. Both can be used, even at the same time. The object interface is
@@ -28,21 +29,21 @@ convenient, but has some limitations and contributes to namespace pollution.
 
 The functional interface looks like this:
 
-  use TUWF::XML ':html';
+  use TUWF::XML ':html5';
   # -- or, from within a TUWF website:
-  use TUWF ':html';
+  use TUWF ':html5';
   
   TUWF::XML->new(default => 1);
-  html sub {
-   head sub {
-    title 'Document title!';
+  Html sub {
+   Head sub {
+    Title 'Document title!';
    };
   };
 
   # -- or, in more imperative style:
-  html;
-   head;
-    title 'Document title!';
+  Html;
+   Head;
+    Title 'Document title!';
    end;
   end 'html';
 
@@ -52,16 +53,16 @@ And the equivalent, using the object interface:
   use TUWF::XML;
   
   my $xml = TUWF::XML->new();
-  $xml->html(sub {
-   $xml->head(sub {
-    $xml->title('Document title!');
+  $xml->Html(sub {
+   $xml->Head(sub {
+    $xml->Title('Document title!');
    });
   });
 
   # -- or, again in more imperative style:
-  $xml->html;
-   $xml->head;
-    $xml->title('Document title!');
+  $xml->Html;
+   $xml->Head;
+    $xml->Title('Document title!');
    $xml->end;
   $xml->end('html');
 
@@ -238,10 +239,11 @@ Is more safely written as:
     tag 'b', 'text';
   };
 
-=head2 <xhtml-tag>(attribute => value, .., contents)
+=head2 <html-tag>(attribute => value, .., contents)
 
-For convenience, all XHTML 1.0 tags have their own function that acts as a
-shorthand for calling C<tag()>. The following functions are defined:
+For convenience, all HTML5 and XHTML 1.0 tags have their own function that acts
+as a shorthand for calling C<tag()>. The following XHTML 1.0 functions are
+defined (exported by C<:html>):
 
   a abbr acronym address area b base bdo big blockquote body br button caption
   cite code col colgroup dd del dfn div dl dt em fieldset form h1 h2 h3 h4 h5
@@ -253,26 +255,39 @@ Note that some functions start with an upper-case character. This is to avoid
 problems with reserved words or overriding Perl core functions with the same
 name.
 
+The following HTML5 tags are exported with C<:html5>. For consistency, and to
+soften the effects of namespace pollution to some extend, all of these start
+with an upper-case character:
+
+  A Abbr Address Area Article Aside Audio B Base Bb Bdo Blockquote Body Br
+  Button Canvas Caption Cite Code Col Colgroup Command Datagrid Datalist Dd Del
+  Details Dfn Dialog Div Dl Dt Em Embed Fieldset Figure Footer Form H1 H2 H3 H4
+  H5 H6 Head Header Hr I Iframe Img Input Ins Kbd Label Legend Li Link Map Mark
+  Menu Meta Meter Nav Noscript Object Ol Optgroup Option Output P Param Pre
+  Progress Q Rp Rt Ruby Samp Script Section Select Small Source Span Strong
+  Style Sub Sup Table Tbody Td Textarea Tfoot Th Thead Time Title Tr Ul Var
+  Video
+
 Some tags are I<boolean>, meaning that they should always be self-closing and
 not have any contents. To generate these tags with C<tag()>, you have to
 specify undef as the I<contents> argument. This is not required when using
 these convenience functions, the undef argument is automatically added for the
 following tags:
 
-  area base br img input Link param
+  area base br col command embed hr img input link meta param source
 
 Again, some examples:
   
-  br;  # tag 'br', undef;
-  div; # tag 'div';
+  Br;  # tag 'br', undef;
+  Div; # tag 'div';
 
-  title 'Page title';
+  Title 'Page title';
   # tag 'title', 'Page title';
 
   Link rel => 'shortcut icon', href => '/favicon.ico';
   # tag 'link', rel => 'shortcut icon', href => '/favicon.ico', undef;
 
-  textarea rows => 10, cols => 50, $content;
+  Textarea rows => 10, cols => 50, $content;
   # tag 'textarea', rows => 10, cols => 50, $content;
 
 
@@ -287,11 +302,13 @@ function (except C<new()>) by specifying it on the C<use> line:
   lit html_escape $content;
   br;
 
-Or you can import an entire group of functions by adding C<:xml> or C<:html> to
-the list. The C<:xml> group consists of the functions C<xml()>, C<lit()>,
-C<txt()>, C<tag()>, and C<end()>. The C<:html> group consists of all xhtml-tag
-functions in addition to the following: C<html()>, C<lit()>, C<txt()>,
-C<tag()> and C<end()>.
+Or you can import an entire group of functions by adding C<:xml>, C<:html> or
+C<:html5> to the list. The C<:xml> group consists of the functions C<xml()>,
+C<lit()>, C<txt()>, C<tag()>, and C<end()>. The C<:html> group consists of all
+(mostly lowercase) xhtml-tag functions, and the C<:html5> group consists of all
+the HTML5 tags starting with an upper-case character.  The C<:html> and
+C<:html5> groups also export the following functions: C<html()>, C<lit()>,
+C<txt()>, C<tag()> and C<end()>.
 
 When using this module in a TUWF website, you can substitute C<TUWF::XML> with
 C<TUWF>. The main TUWF module will then redirect its import argments to this
