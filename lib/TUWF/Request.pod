@@ -28,9 +28,9 @@ Examples:
   # Let the query string be the following:
   #  "key=value&foo=bar1&foo=bar2"
   # Then:
-  my @list = $self->reqGets();      # @list = ('key', 'foo')
-  my @foo  = $self->reqGets('foo'); # @foo = ('bar1', 'bar2')
-  my @no   = $self->reqGets('no');  # @no = ()
+  my @list = tuwf->reqGets();      # @list = ('key', 'foo')
+  my @foo  = tuwf->reqGets('foo'); # @foo = ('bar1', 'bar2')
+  my @no   = tuwf->reqGets('no');  # @no = ()
 
 =head2 reqGet(name)
 
@@ -39,7 +39,7 @@ C<(reqGets($name))[0]>. The name argument is required. Since this method only
 ever returns a scalar value, it is safe to use when constructing lists:
 
   my %stuff = (
-    name => $self->reqGet('name'),
+    name => tuwf->reqGet('name'),
   );
 
 Don't do that with C<reqGets()>, as it may leave you vulnerable to parameter
@@ -142,10 +142,10 @@ For example:
   TUWF::set(cookie_prefix => 'ex_');
   
   # ...later, when processing a request,
-  my $auth = $self->reqCookie('auth');  # actually means 'ex_auth'
+  my $auth = tuwf->reqCookie('auth');  # actually means 'ex_auth'
   
   # when assuming the 'ex_auth' cookie to be present,
-  my @cookies = $self->reqCookie();     # @cookies = ('auth')
+  my @cookies = tuwf->reqCookie();     # @cookies = ('auth')
 
 =head2 reqMethod()
 

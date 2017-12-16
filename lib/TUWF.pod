@@ -70,7 +70,7 @@ encoding before passing it to any TUWF function.
 =item Designed for FastCGI environments.
 
 TUWF is designed and optimized to be run a FastCGI environment, but it can also
-be used for plain old CGI scripts and it can run as a standalone HTTP server.
+be used for plain old CGI scripts or run as a standalone HTTP server.
 
 Due to the singleton design of TUWF, you should avoid running TUWF websites in
 persistent environments that allow multiple websites to share the same process,
@@ -107,20 +107,6 @@ subdomains in the same TUWF script. A common solution is to write a separate
 script for each subdomain. It is still possible to share code among both sites
 by means of modules.
 
-=item Backward compatibility is not guaranteed.
-
-TUWF is the result of years of evolution, from one implementation to another
-and from one design to another. The reason TUWF has become what it is now is
-because of this unconstrained evolution. Providing backward compatibility in
-many cases complicates the implementation of new ideas and may add unwanted
-bloat to the framework. For this reason, future versions of TUWF may work
-differently from older versions, and may not be backward compatible with code
-written for an older version.
-
-When using TUWF for your project, it is adviced to get one version of TUWF and
-stick to that, until you have time to check out a later version and update your
-code to work with that one.
-
 =back
 
 
@@ -136,10 +122,10 @@ the website is spread among the various modules.
 
 The script can load the modules by calling C<TUWF::load()> or
 C<TUWF::load_recursive()>. TUWF configuration variables can be set using
-C<TUWF::set()>, and URIs can be mapped to functions using C<TUWF::register()>.
-These functions can also be called by the loaded modules. In fact, for larger
-websites it is common for the script to only initialize TUWF and load the
-modules, while all calls to C<TUWF::register()> are done from the modules.
+C<TUWF::set()>, and routing handlers can be registered through C<TUWF::get()>
+and friends.  These functions can also be called by the loaded modules. In
+fact, for larger websites it is common for the script to only initialize TUWF
+and load the modules, while routing handlers are registered in the modules.
 
 The framework is based on callbacks: At initialization, your code registers
 callbacks to the framework and then passes the control to TUWF using
@@ -150,11 +136,11 @@ functions you registered.
 =head2 The TUWF Object
 
 While TUWF can not really be called I<object oriented>, it does use B<one>
-major object, called the I<TUWF object>. This object can be accessed from
-C<$TUWF::OBJ> and is passed as the first argument to all callback functions.
-Even though it is an "instance" of C<TUWF::Object>, you are encouraged to use
-it as if it is the main object for your website: You can use it to store global
-configuration settings and other shared data.
+major object, called the I<TUWF object>. This object can be accessed using the
+C<tuwf()> function that is exported by default, or by accessing C<$TUWF::OBJ>
+directly.  Even though it is an "instance" of C<TUWF::Object>, you are
+encouraged to use it as if it is the main object for your website: You can use
+it to store global configuration settings and other shared data.
 
 All modules loaded using C<TUWF::load()> and its recursive counterpart can
 export functions; These functions are automatically imported in the
@@ -177,7 +163,7 @@ or standalone mode. In particular, it is a bad idea to store session data in
 this object, assuming it to be available on the next request. Storing data
 specific to a single request in the object is fine, as long as you make sure to
 reset or re-initialize the data at the beginning of the request. The
-C<pre_request_handler> is useful for such practice.
+I<before> hook is useful for such practice.
 
 
 =head2 Utility functions
@@ -401,10 +387,10 @@ individual call to C<resCookie()>. This can be useful when globally setting the
 cookie domain:
 
   TUWF::set(cookie_defaults => { domain => '.example.org' });
-  $self->resCookie(foo => 'bar');
+  tuwf->resCookie(foo => 'bar');
   
   # is equivalent to:
-  $self->resCookie(foo => 'bar', domain => '.example.org');
+  tuwf->resCookie(foo => 'bar', domain => '.example.org');
   # for each call to resCookie()
 
 Default: undef (disabled).
@@ -622,18 +608,16 @@ for the methods it provides.
 Returns the capture group from the route regex. Both positional captures and
 named captures can be used, for example:
 
-  TUWF::register(qr{user/(?<uid>[1-9][0-9]*)} => sub {
-    my($self, $uid) = @_;
-
+  TUWF::get qr{/user/(?<uid>[1-9][0-9]*)} => sub {
     # capture(1) is equivalent to $1 from the regex.
-    $self->capture(1) == $uid;
+    tuwf->capture(1) == $uid;
 
     # capture('uid') is equivalent to $+{uid} from the regex.
-    $self->capture('uid') == $uid;
-  });
+    tuwf->capture('uid') == $uid;
+  };
 
 Note that C<captures(0)> is not available; This would be equivalent to
-C<< $self->reqPath >>, save for the leading slash.
+C<< tuwf->reqPath >>, save for the leading slash.
 
 =head2 debug()
 

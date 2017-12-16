@@ -20,12 +20,12 @@ be reset to their defaults. This method is called at the start of each request
 by TUWF, but it can also be useful in your own code:
 
   # create a response, setting headers and content, etc...
-  $self->resCookie(userid => $user);
-  print { $self->resFd() } "Content!\n";
+  tuwf->resCookie(userid => $user);
+  print { tuwf->resFd() } "Content!\n";
   
   # when you later decide that you actually wanted to create a totally
   # different response:
-  $self->resInit();
+  tuwf->resInit();
   # ...after which you can start again
 
 =head2 resHeader(name, value, add)
@@ -188,8 +188,8 @@ written to the buffer. This method also disables output compression to prevent
 additional copies of the data. Make sure to set the right content type as well,
 for example:
 
-  $self->resHeader('Content-Type' => 'image/jpeg');
-  $self->resBinary($image_data);
+  tuwf->resHeader('Content-Type' => 'image/jpeg');
+  tuwf->resBinary($image_data);
 
 =head2 resFile(path, filename)
 
@@ -206,23 +206,21 @@ calling C<resHeader()> after C<resFile()>.
 Examples:
 
   # Serve 'GET /static/x' requests from /webroot/public
-  TUWF::register(qr{static/(.+)} => sub {
-    my($self, $fn) = @_;
-    $self->resFile('/webroot/public', $fn) || $self->resNotFound;
-  });
+  TUWF::get qr{/static/(.+)} => sub {
+    tuwf->resFile('/webroot/public', tuwf->captures(1)) || tuwf->resNotFound;
+  };
 
   # Serve a file in '/webroot/public' if it exists,
   # otherwise handle the request as usual.
-  TUWF::set(pre_request_handler => sub {
-    my $self = shift;
-    return 0 if $self->resFile('/webroot/public', $self->reqPath);
+  TUWF::hook before => sub {
+    return 0 if tuwf->resFile('/webroot/public', tuwf->reqPath);
     return 1;
-  });
+  };
 
 You might also want to set proper caching headers if the static files don't
 change much:
 
-  $self->resHeader('Cache-Control' => 'max-age=31536000');
+  tuwf->resHeader('Cache-Control' => 'max-age=31536000');
 
 C<resFile()> uses C<resBinary()> internally, so output compression will be
 disabled for these files. Furthermore, this method is not really suitable for
