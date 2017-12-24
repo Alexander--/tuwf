@@ -341,6 +341,13 @@ L<TUWF>.
 This module was inspired by L<XML::Writer|XML::Writer>, which is more powerful
 but less convenient.
 
+There's also L<DSL::HTML|DSL::HTML>, a slightly more featureful, heavyweight
+and opinionated HTML-templating-inside-Perl module, based on
+L<HTML::Tree|HTML::Tree>.
+
+And there's L<HTML::Declare>, which is conceptually simpler than both this and
+L<DSL::HTML>, but its syntax isn't quite as nice.
+
 
 =head1 COPYRIGHT
 
