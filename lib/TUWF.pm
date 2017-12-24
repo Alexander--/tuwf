@@ -206,26 +206,50 @@ sub load_recursive {
 }
 
 
-# the default error handlers are quite ugly and generic...
-sub _error_400 { _very_simple_page(400, '400 - Bad Request', 'Only UTF-8 encoded data is accepted.') }
-sub _error_404 { _very_simple_page(404, '404 - Page Not Found', 'The page you were looking for does not exist...') }
-sub _error_405 { _very_simple_page(405, '405 - Method not allowed', 'The only allowed methods are: HEAD, GET or POST.') }
-sub _error_413 { _very_simple_page(413, '413 - Request Entity Too Large', 'You were probably trying to upload a too large file.') }
-sub _error_500 { _very_simple_page(500, '500 - Internal Server Error', 'Oops! Looks like something went wrong on our side.') }
+sub _error_400 { _very_simple_page(400, '400 - Bad Request', 'Only UTF-8 encoded data is accepted.<br><small>Stop trying to hack me!</small>') }
+sub _error_404 {
+  _very_simple_page(404, '404 - Page Not Found', q{
+    Whatever it is you were looking for, this probably isn't it.
+    <br><small>Unless you were looking for an error page, in which case:
+    Congratulations!</small>
+  });
+}
+sub _error_405 { _very_simple_page(405, '405 - Method not allowed', 'Or at least, this isn\'t one of the HTTP methods that I was expecting!') }
+sub _error_413 {
+  _very_simple_page(413, '413 - Request Entity Too Large', q{
+    That's an odd way of saying that you were probably trying to upload a large
+    file. Too large, in fact, for the server to handle. If you believe this
+    error to be mistaken, you can ask the site admin to increase the maximum
+    allowed upload size.
+  });
+}
+sub _error_500 {
+  _very_simple_page(500, '500 - Extraterrestrial Server Error', q{
+    Ouch! Something went wrong on the server. Perhaps a misconfiguration,
+    perhaps a bug, or perhaps just a temporary issue caused by regular
+    maintenance or maybe even alien interference.  Details of this error have
+    been written to a log file. If the issue persists, please contact the site
+    admin to let them know that they might have some fixing to do.
+  });
+}
 
-# a simple and ugly page for error messages
+# a super simple page for error messages
 sub _very_simple_page {
   my($code, $title, $msg) = @_;
   $OBJ->resInit;
   $OBJ->resStatus($code);
-  $OBJ->resHeader(Allow => 'GET, HEAD, POST') if $code == 405;
+  $OBJ->resHeader(Allow => 'GET, HEAD, POST') if $code == 405; # XXX: not accurate, should get this from the route list.
   my $fd = $OBJ->resFd;
+  # CSS based on http://bettermotherfuckingwebsite.com/
   print $fd <<__;
-<!DOCTYPE html
-  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+<html>
 <head>
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <style type="text/css">
+  body { margin:40px auto; max-width:700px; line-height:1.6; font-size:18px; color:#444; padding:0 10px }
+  h1 { line-height:1.2 }
+ </style>
  <title>$title</title>
 </head>
 <body>
