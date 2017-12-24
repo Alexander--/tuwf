@@ -77,6 +77,9 @@ sub _parse_urlencoded {
         decode_utf8($s, 1);
       #eg;
       s/%u([0-9a-fA-F]{4})/chr hex($1)/eg;
+      # Disallow any control codes, except for x09 (tab), x0a (newline) and x0d (carriage return)
+      # The error message is a hack to trigger the 'utf8' error code.
+      die "Illegal control code (does not map to Unicode)" if /[\x00-\x08\x0b\x0c\x0e-\x1f]/;
     }
     push @{$dat{$key}}, $val;
   }
