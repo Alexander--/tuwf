@@ -163,7 +163,7 @@ sub resStatus {
 }
 
 
-# Redirect to an other page, accepts an URL (relative to current hostname) and
+# Redirect to an other page, accepts an URL (either relative or absolute) and
 # an optional type consisting of 'temp' (temporary) or 'post' (after posting a form).
 # No type argument means a permanent redirect.
 sub resRedirect {
@@ -173,7 +173,7 @@ sub resRedirect {
   my $fd = $self->resFd();
   print $fd 'Redirecting...';
   $self->resHeader('Content-Type' => 'text/plain');
-  $self->resHeader('Location' => $self->reqBaseURI().$url);
+  $self->resHeader('Location' => $url);
   $self->resStatus(!$type ? 301 : $type eq 'temp' ? 307 : 303);
 }
 

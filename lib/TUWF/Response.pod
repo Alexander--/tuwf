@@ -161,8 +161,8 @@ Gets or sets the numeric HTTP response status code.
 
 =head2 resRedirect(location, type)
 
-Generate a HTTP redirect to I<location>, which should be a path relative to the
-domain, including leading a slash. If I<type> is not defined, a 301 (Moved
+Generate a HTTP redirect to I<location>, which should be an absolute URL or a
+path relative to the current domain. If I<type> is not defined, a 301 (Moved
 Permanently) is used. If I<type> is 'temp', a 307 (Temporary Redirect) or if
 I<type> is 'post' a 303 (See Other) status code is used. The latter is
 recommended for use as response to a POST request, as it explicitely tells the
