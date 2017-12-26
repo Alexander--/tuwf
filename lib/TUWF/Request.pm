@@ -63,6 +63,14 @@ sub reqInit {
 }
 
 
+sub _check_control {
+  # Disallow any control codes, except for x09 (tab), x0a (newline) and x0d (carriage return)
+  # The error message is a hack to trigger the 'utf8' error code.
+  die "Illegal control code (does not map to Unicode)" if $_[0] =~ /[\x00-\x08\x0b\x0c\x0e-\x1f]/;
+  $_[0]
+}
+
+
 sub _parse_urlencoded {
   my %dat;
   my $d = shift;
@@ -77,9 +85,7 @@ sub _parse_urlencoded {
         decode_utf8($s, 1);
       #eg;
       s/%u([0-9a-fA-F]{4})/chr hex($1)/eg;
-      # Disallow any control codes, except for x09 (tab), x0a (newline) and x0d (carriage return)
-      # The error message is a hack to trigger the 'utf8' error code.
-      die "Illegal control code (does not map to Unicode)" if /[\x00-\x08\x0b\x0c\x0e-\x1f]/;
+      _check_control($_);
     }
     push @{$dat{$key}}, $val;
   }
@@ -139,11 +145,11 @@ sub _parse_multipart {
     # regular form element. The standards do not require the filename to be
     # present, but I am not aware of any browser that does not send it.
     if($filename) {
-      push @{$nfo->{POST}{$name}}, decode_utf8 $filename, 1;
-      push @{$nfo->{MIMES}{$name}}, decode_utf8 $mime, 1;
+      push @{$nfo->{POST}{$name}}, _check_control decode_utf8 $filename, 1;
+      push @{$nfo->{MIMES}{$name}}, _check_control decode_utf8 $mime, 1;
       push @{$nfo->{FILES}{$name}}, $value; # not decoded, can be binary
     } else {
-      push @{$nfo->{POST}{$name}}, decode_utf8 $value, 1;
+      push @{$nfo->{POST}{$name}}, _check_control decode_utf8 $value, 1;
     }
   }
 }
@@ -164,6 +170,8 @@ sub _parse_cookies {
     next if !$_ || !m{^([^\(\)<>@,;:\\"/\[\]\?=\{\}\t\s]+)=("?)(.*)\2$};
     my($n, $v) = ($1, $3);
     next if $self->{_TUWF}{cookie_prefix} && !($n =~ s/^\Q$self->{_TUWF}{cookie_prefix}\E//);
+    _check_control $n;
+    _check_control $v;
     $dat{$n} = $v if !exists $dat{$n};
   }
   return \%dat;
@@ -259,13 +267,13 @@ sub reqHeader {
   my($self, $name) = @_;
   if(@_ == 2) {
     (my $v = uc $_[1]) =~ tr/-/_/;
-    return $ENV{"HTTP_$v"}||'';
+    return _check_control decode_utf8 $ENV{"HTTP_$v"}||'', 1;
   } else {
     return (map {
       if(/^HTTP_/) { 
         (my $h = lc $_) =~ s/_([a-z])/-\U$1/g;
         $h =~ s/^http-//;
-        decode_utf8 $h, 1;
+        _check_control decode_utf8 $h, 1;
       } else { () }
     } sort keys %ENV);
   }
@@ -275,7 +283,7 @@ sub reqHeader {
 # returns the path part of the current URI, including the leading slash
 sub reqPath {
   (my $u = ($ENV{REQUEST_URI}||'')) =~ s{\?.*$}{};
-  return decode_utf8 $u, 1;
+  return _check_control decode_utf8 $u, 1;
 }
 
 
@@ -293,7 +301,7 @@ sub reqBaseURI {
 
 sub reqQuery {
   my $u = $ENV{QUERY_STRING} ? '?'.$ENV{QUERY_STRING} : '';
-  return decode_utf8 $u, 1;
+  return _check_control decode_utf8 $u, 1;
 }
 
 
