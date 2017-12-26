@@ -173,6 +173,11 @@ Includes a leading slash.
 
 Returns the protocol used to perform the request, i.e. C<http> or C<https>.
 
+Note that the detected protocol may be wrong if your website is running behind
+a reverse proxy that is either terminating or stripping HTTPS. As a workaround,
+you can manually set the correct C<HTTPS> environment variable to C<0> or C<1>
+in your initialization code or, even better, in your web server configuration.
+
 =head2 reqBaseURI()
 
 Returns the I<base URI> of the current page. That is, C<http(s)://> plus
