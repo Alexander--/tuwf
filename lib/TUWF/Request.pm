@@ -135,7 +135,7 @@ sub _parse_multipart {
       }
     }
 
-    $name = decode_utf8 $name, 1;
+    $name = _check_control decode_utf8 $name, 1;
 
     # In the case of a file upload, use the filename as value instead of the
     # data. This is to ensure that reqPOST() always returns decoded data.
@@ -267,7 +267,8 @@ sub reqHeader {
   my($self, $name) = @_;
   if(@_ == 2) {
     (my $v = uc $_[1]) =~ tr/-/_/;
-    return _check_control decode_utf8 $ENV{"HTTP_$v"}||'', 1;
+    $v = $ENV{"HTTP_$v"}||'';
+    return _check_control decode_utf8 $v, 1;
   } else {
     return (map {
       if(/^HTTP_/) { 
