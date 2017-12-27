@@ -389,6 +389,10 @@ L<HTML::Tree|HTML::Tree>.
 And there's L<HTML::Declare>, which is conceptually simpler than both this and
 L<DSL::HTML>, but its syntax isn't quite as nice.
 
+And there's also L<HTML::FromArrayref>, L<HTML::Tiny>, L<HTML::Untidy> and many
+more modules on CPAN. In fact I don't know why you should use this module
+instead of whatever is available on CPAN.
+
 
 =head1 COPYRIGHT
 
