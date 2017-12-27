@@ -23,19 +23,24 @@ BEGIN {
     a abbr acronym address area b base bdo big blockquote body br button caption
     cite code col colgroup dd del dfn div dl dt em fieldset form h1 h2 h3 h4 h5 h6
     head i img input ins kbd label legend li Link Map meta noscript object ol
-    optgroup option p param pre q samp script Select small span strong style Sub
+    optgroup option p param pre Q samp script Select small span strong style Sub
     sup table tbody td textarea tfoot th thead title Tr tt ul var
   |;
   my @html5tags = qw|
-    A Abbr Address Area Article Aside Audio B Base Bb Bdo Blockquote Body Br
-    Button Canvas Caption Cite Code Col Colgroup Command Datagrid Datalist Dd
-    Del Details Dfn Dialog Div Dl Dt Em Embed Fieldset Figure Footer Form H1 H2
-    H3 H4 H5 H6 Head Header Hr I Iframe Img Input Ins Kbd Label Legend Li Link
-    Map Mark Menu Meta Meter Nav Noscript Object Ol Optgroup Option Output P
-    Param Pre Progress Q Rp Rt Ruby Samp Script Section Select Small Source
-    Span Strong Style Sub Sup Table Tbody Td Textarea Tfoot Th Thead Time Title
-    Tr Ul Var Video
+    a abbr address area article aside audio b base bb bdo blockquote body br
+    button canvas caption cite code col colgroup command datagrid datalist dd
+    del details dfn dialog div dl dt em embed fieldset figure footer form h1 h2
+    h3 h4 h5 h6 head header hr i iframe img input ins kbd label legend li Link
+    Map mark menu meta meter nav noscript object ol optgroup option output p
+    param pre progress Q rp rt ruby samp script section Select small source
+    span strong style Sub sup table tbody td textarea tfoot th thead Time title
+    Tr ul var video
   |;
+  my @Htmltags   = map ucfirst, @htmltags;
+  my @Html5tags  = map ucfirst, @html5tags;
+  my @html_tags  = map lc($_).'_', @htmltags;
+  my @html5_tags = map lc($_).'_', @html5tags;
+  my @all = uniq @htmltags, @html5tags, @Htmltags, @Html5tags, @html_tags, @html5_tags;
 
   # boolean/empty/self-closing tags
   my %htmlbool = map +($_,1), qw{
@@ -44,8 +49,8 @@ BEGIN {
 
   # create the subroutines to map to the html tags
   no strict 'refs';
-  for my $e (uniq @html5tags, @htmltags) {
-    my $le = lc $e;
+  for my $e (@all) {
+    (my $le = lc $e) =~ s/_$//;
     *{__PACKAGE__."::$e"} = sub {
       my $s = ref($_[0]) eq __PACKAGE__ ? shift : $OBJ;
       $s->tag($le, @_, $htmlbool{$le} && $#_%2 ? undef : ());
@@ -53,14 +58,20 @@ BEGIN {
   }
 
   # functions to export
-  my @htmlexport = (qw| html Html lit txt tag end |);
-  my @xmlexport = qw| xml lit txt tag end |;
-
-  @EXPORT_OK = uniq @htmlexport, @html5tags, @htmltags, @xmlexport, 'mkclass', 'xml_escape', 'html_escape';
+  @EXPORT_OK = (@all, qw(
+    mkclass xml_escape html_escape
+    tag  html  lit  txt  end
+    Tag  Html  Lit  Txt  End
+    tag_ html_ lit_ txt_ end_
+  ));
   %EXPORT_TAGS = (
-    html  => [ @htmlexport, @htmltags ],
-    html5 => [ @htmlexport, @html5tags ],
-    xml   => \@xmlexport,
+    html  => [ @htmltags,   qw(tag  html  lit  txt  end ) ],
+    html5 => [ @html5tags,  qw(tag  html  lit  txt  end ) ],
+    Html  => [ @Htmltags,   qw(Tag  Html  Lit  Txt  End ) ],
+    Html5 => [ @Html5tags,  qw(Tag  Html  Lit  Txt  End ) ],
+    html_ => [ @html_tags,  qw(tag_ html_ lit_ txt_ end_) ],
+    html5_=> [ @html5_tags, qw(tag_ html_ lit_ txt_ end_) ],
+    xml   => [ qw(xml tag lit txt end) ],
   );
 };
 
@@ -133,12 +144,18 @@ sub lit {
   $s->{write}->($_) for @_;
 }
 
+*Lit = \&lit;
+*lit_ = \&lit;
+
 
 # output text (HTML escaped)
 sub txt {
   my $s = ref($_[0]) eq __PACKAGE__ ? shift : $OBJ;
   $s->lit(xml_escape $_) for @_;
 }
+
+*Txt = \&txt;
+*txt_ = \&txt;
 
 
 # Output any XML or HTML tag.
@@ -178,6 +195,9 @@ sub tag {
   } 
 }
 
+*Tag = \&tag;
+*tag_ = \&tag;
+
 
 # Ends the last opened tag
 sub end {
@@ -189,6 +209,9 @@ sub end {
   $s->lit("\n".(' 'x(@{$s->{stack}}*$s->{pretty}))) if $s->{pretty};
   $s->lit('</'.$l.'>');
 }
+
+*End = \&end;
+*end_ = \&end;
 
 
 sub html {
@@ -215,6 +238,7 @@ sub html {
 }
 
 *Html = \&html;
+*html_ = \&html;
 
 
 # Writes an xml header, doesn't open an <xml> tag, and doesn't need an

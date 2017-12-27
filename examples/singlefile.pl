@@ -19,7 +19,7 @@ use lib $ROOT.'/lib';
 
 
 # load TUWF and import all html functions
-use TUWF ':html5', 'mkclass';
+use TUWF ':Html5', 'mkclass';
 
 TUWF::set debug => 1;
 
@@ -46,9 +46,9 @@ TUWF::get '/' => sub {
 TUWF::get qr{/sub/(?<capturename>.*)} => sub {
   # output a plain text file containing $uri
   tuwf->resHeader('Content-Type' => 'text/plain; charset=UTF-8');
-  lit tuwf->capture(1);
-  lit "\n";
-  lit tuwf->capture('capturename');
+  Lit tuwf->capture(1);
+  Lit "\n";
+  Lit tuwf->capture('capturename');
 };
 
 
