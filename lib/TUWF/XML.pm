@@ -100,6 +100,7 @@ sub new {
   $o{write} ||= sub { print @_ };
   my $self = bless {
     %o,
+    nesting => 0,
     stack => [],
   }, $pack;
   $OBJ = $self if $o{default};
@@ -173,8 +174,8 @@ sub tag {
   my $name = shift;
   croak "Invalid XML tag name" if !$name || $name =~ /^[^a-z]/i || $name =~ / /;
 
-  my $t = $s->{pretty} ? "\n".(' 'x(@{$s->{stack}}*$s->{pretty})) : '';
-  $t .= '<'.$name;
+  my $indent = $s->{pretty} ? "\n".(' 'x($s->{nesting}*$s->{pretty})) : '';
+  my $t = $indent.'<'.$name;
   while(@_ > 1) {
     my $attr = shift;
     croak "Invalid XML attribute name" if !$attr || $attr =~ /^[^a-z]/i || $attr =~ / /;
@@ -184,12 +185,15 @@ sub tag {
   if(!@_) {
     $s->lit($t.'>');
     push @{$s->{stack}}, $name;
+    $s->{nesting}++;
   } elsif(!defined $_[0]) {
     $s->lit($t.' />');
   } elsif(ref $_[0] eq 'CODE') {
     $s->lit($t.'>');
+    local $s->{nesting} = $s->{nesting}+1;
+    local $s->{stack} = []; # Call the sub with an empty stack, there's nothing to end() now.
     $_[0]->();
-    $s->lit('</'.$name.'>');
+    $s->lit($indent.'</'.$name.'>');
   } else {
     $s->lit($t.'>'.xml_escape(shift).'</'.$name.'>');
   } 
@@ -204,9 +208,10 @@ sub end {
   my $s = ref($_[0]) eq __PACKAGE__ ? shift : $OBJ;
   my $w = shift;
   my $l = pop @{$s->{stack}};
+  $s->{nesting}--;
   croak "No more tags to close" if !$l;
   croak "Specified tag to end ($w) is not equal to the last opened tag ($l)" if $w && $w ne $l;
-  $s->lit("\n".(' 'x(@{$s->{stack}}*$s->{pretty}))) if $s->{pretty};
+  $s->lit("\n".(' 'x($s->{nesting}*$s->{pretty}))) if $s->{pretty};
   $s->lit('</'.$l.'>');
 }
 

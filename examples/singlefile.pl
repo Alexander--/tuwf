@@ -22,6 +22,7 @@ use lib $ROOT.'/lib';
 use TUWF ':Html5', 'mkclass';
 
 TUWF::set debug => 1;
+TUWF::set xml_pretty => 1;
 
 # Register a handle for the root path, i.e. "GET /"
 TUWF::get '/' => sub {
