@@ -33,16 +33,16 @@ The function interface looks like this:
   
   TUWF::XML->new(default => 1);
   html sub {
-   head sub {
-    title 'Document title!';
-   };
+    head sub {
+      title 'Document title!';
+    };
   };
   
   # -- or, in more imperative style:
   html;
-   head;
-    title 'Document title!';
-   end;
+    head;
+      title 'Document title!';
+    end;
   end 'html';
 
 And the equivalent, using the object interface:
@@ -52,16 +52,16 @@ And the equivalent, using the object interface:
   
   my $xml = TUWF::XML->new();
   $xml->html(sub {
-   $xml->head(sub {
-    $xml->title('Document title!');
-   });
+    $xml->head(sub {
+      $xml->title('Document title!');
+    });
   });
   
   # -- or, again in more imperative style:
   $xml->html;
-   $xml->head;
-    $xml->title('Document title!');
-   $xml->end;
+    $xml->head;
+      $xml->title('Document title!');
+    $xml->end;
   $xml->end('html');
 
 You may also combine the two interfaces by setting the I<default> option in
@@ -345,11 +345,11 @@ looks like:
 
   use TUWF:XML ':Html5';
   Html sub {
-   Head sub {
-    Title 'Document title!';
-    Tag 'a', href => '/', 'Home';
-    Lit '&nbsp;';
-   };
+    Head sub {
+      Title 'Document title!';
+      Tag 'a', href => '/', 'Home';
+      Lit '&nbsp;';
+    };
   };
 
 =item B<:html_> and B<:html5_>
@@ -360,11 +360,11 @@ similar to Haskell's L<Lucid|https://hackage.haskell.org/package/lucid>:
 
   use TUWF::XML ':html5_';
   html_ sub {
-   head_ sub {
-    title_ 'Document title!';
-    tag_ 'a', href => '/', 'Home';
-    lit_ '&nbsp;';
-   };
+    head_ sub {
+      title_ 'Document title!';
+      tag_ 'a', href => '/', 'Home';
+      lit_ '&nbsp;';
+    };
   };
 
 =back
