@@ -59,7 +59,7 @@ BEGIN {
 
   # functions to export
   @EXPORT_OK = (@all, qw(
-    mkclass xml_escape html_escape
+    xml mkclass xml_escape html_escape
     tag  html  lit  txt  end
     Tag  Html  Lit  Txt  End
     tag_ html_ lit_ txt_ end_
