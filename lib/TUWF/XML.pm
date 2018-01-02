@@ -31,8 +31,8 @@ BEGIN {
     button canvas caption cite code col colgroup command datagrid datalist dd
     del details dfn dialog div dl dt em embed fieldset figure footer form h1 h2
     h3 h4 h5 h6 head header hr i iframe img input ins kbd label legend li Link
-    main Map mark menu meta meter nav noscript object ol optgroup option output
-    p param pre progress Q rp rt ruby samp script section Select small source
+    main Map mark meta meter nav noscript object ol optgroup option output p
+    param pre progress Q rp rt ruby samp script section Select small source
     span strong style Sub sup table tbody td textarea tfoot th thead Time title
     Tr ul var video
   |;
