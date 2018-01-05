@@ -61,6 +61,7 @@ our $OBJ = bless {
       png    image/png
       rar    application/x-rar-compressed
       rss    application/rss+xml
+      svg    image/svg+xml
       tar    application/x-tar
       txt    text/plain
       webm   video/webm
