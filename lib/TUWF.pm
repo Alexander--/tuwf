@@ -40,9 +40,14 @@ our $OBJ = bless {
     # No particular selection of MIME types
     mime_types => {qw{
       7z     application/x-7z-compressed
+      aac    audio/aac
       atom   application/atom+xml
+      avi    video/x-msvideo
+      bin    application/octet-stream
       bmp    image/bmp
+      bz     application/x-bzip2
       css    text/css
+      csv    text/csv
       gif    image/gif
       htm    text/html
       html   text/html
@@ -55,14 +60,20 @@ our $OBJ = bless {
       mp4    video/mp4
       mp4v   video/mp4
       mpg4   video/mp4
-      oga    audop/ogg
+      mpg    video/mpeg
+      mpeg   video/mpeg
+      oga    audio/ogg
       ogg    audio/ogg
+      ogv    video/ogg
+      otf    font/otf
       pdf    application/pdf
       png    image/png
       rar    application/x-rar-compressed
       rss    application/rss+xml
       svg    image/svg+xml
       tar    application/x-tar
+      tiff   image/tiff
+      ttf    font/ttf
       txt    text/plain
       webm   video/webm
       xhtml  text/html
