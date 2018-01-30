@@ -99,6 +99,17 @@ Example of an "UPDATE or INSERT" query:
 Of course, the use of the extended formatting in the above example is not very
 practical. Their advantage is more apparent when the queries get more dynamic.
 
+=head2 dbVal(query, @params)
+
+Accepts the same arguments as C<dbExec()>, and returns the first value of the
+first row.
+
+Examples:
+
+  my $count = tuwf->dbVal('SELECT COUNT(*) FROM users');
+
+  my $exists = tuwf->dbVal('SELECT 1 FROM users WHERE id = ?', $id);
+
 =head2 dbRow(query, @params)
 
 Accepts the same arguments as C<dbExec()>, and returns the first row of the
@@ -106,9 +117,7 @@ result as a hashref. The return value is equivalent to
 C<$sth-E<gt>fetchrow_hashref()>, except C<dbRow()> returns an empty hash if the
 query did not return any rows.
 
-Examples:
-
-  my $count = tuwf->dbRow('SELECT COUNT(*) AS num FROM users')->{num};
+Example:
 
   my %latest_announcement = %{ tuwf->dbRow(q{
     SELECT title, message, post_date

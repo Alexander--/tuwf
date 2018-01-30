@@ -10,7 +10,7 @@ use Time::HiRes 'time';
 our $VERSION = '1.1';
 our @EXPORT = qw|
   dbInit dbh dbCheck dbDisconnect dbCommit dbRollBack
-  dbExec dbRow dbAll dbPage
+  dbExec dbVal dbRow dbAll dbPage
 |;
 our @EXPORT_OK = ('sqlprint');
 
@@ -89,15 +89,21 @@ sub dbExec {
 }
 
 
+# ..return the first column of the first row
+sub dbVal {
+  return sqlhelper(shift, 1, @_);
+}
+
+
 # ..return the first row as an hashref
 sub dbRow {
-  return sqlhelper(shift, 1, @_);
+  return sqlhelper(shift, 2, @_);
 }
 
 
 # ..return all rows as an arrayref of hashrefs
 sub dbAll {
-  return sqlhelper(shift, 2, @_);
+  return sqlhelper(shift, 3, @_);
 }
 
 
@@ -130,8 +136,9 @@ sub sqlhelper { # type, query, @list
   my $ret = eval {
     $q = $self->dbh->prepare($q[0]);
     $q->execute($#q ? @q[1..$#q] : ());
-    $r = $type == 1 ? $q->fetchrow_hashref :
-         $type == 2 ? $q->fetchall_arrayref({}) :
+    $r = $type == 1 ? ($q->fetchrow_array)[0] :
+         $type == 2 ? $q->fetchrow_hashref :
+         $type == 3 ? $q->fetchall_arrayref({}) :
                       $q->rows;
     1;
   };
@@ -140,8 +147,8 @@ sub sqlhelper { # type, query, @list
   croak($self->dbh->errstr || $@) if !$ret;
 
   $r = 0  if $type == 0 && (!$r || $r == 0);
-  $r = {} if $type == 1 && (!$r || ref($r) ne 'HASH');
-  $r = [] if $type == 2 && (!$r || ref($r) ne 'ARRAY');
+  $r = {} if $type == 2 && (!$r || ref($r) ne 'HASH');
+  $r = [] if $type == 3 && (!$r || ref($r) ne 'ARRAY');
 
   return $r;
 }
