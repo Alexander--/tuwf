@@ -142,20 +142,19 @@ directly.  Even though it is an "instance" of C<TUWF::Object>, you are
 encouraged to use it as if it is the main object for your website: You can use
 it to store global configuration settings and other shared data.
 
-All modules loaded using C<TUWF::load()> and its recursive counterpart can
-export functions; These functions are automatically imported in the
-C<TUWF::Object> namespace and can be used as methods of the TUWF object. This
-allows for an easy method to split the functionality of your website among
-different functions and files, without having to constantly load and import
-your utility modules in each file that uses them.
+All modules loaded using C<TUWF::load()> and its recursive counterpart can add
+their own methods to the TUWF Object. This makes it easy to split the
+functionality of your website among different functions and files, without
+having to constantly load and import your utility modules in each file that
+uses them.
 
-Of course, with all exported functions being imported into a single namespace,
-this does call for some function naming conventions to avoid name conflicts and
-other confusing issues. The main TUWF methods use camelCase and are often
-prefixed with a short identifier to indicate to which module or section they
-belong. For example, the L<TUWF::Request|TUWF::Request> methods all start with
-C<req> and L<TUWF::Response|TUWF::Response> with C<res>. It is a good idea to
-adopt this style when you write your own methods.
+Of course, with all these methods being imported into a single namespace, this
+does call for some method naming conventions to avoid name conflicts and other
+confusing issues. The main TUWF methods use camelCase and are often prefixed
+with a short identifier to indicate to which module or section they belong. For
+example, the L<TUWF::Request|TUWF::Request> methods all start with C<req> and
+L<TUWF::Response|TUWF::Response> with C<res>. It is a good idea to adopt this
+style when you write your own methods.
 
 Be warned that the data in the TUWF object may or may not persist among
 multiple requests, depending on whether your script is running in CGI, FastCGI
@@ -299,9 +298,9 @@ This replaces the L<post_request_handler|/post_request_handler> setting.
 
 =head2 TUWF::load(@modules)
 
-Loads the listed module names and imports their exported functions to the
-C<TUWF::Object> namespace. The modules must be available in any subdirectory in
-C<@INC>.
+Loads the listed module names and optionally imports their exported functions
+to the C<TUWF::Object> namespace (see the L</import_modules> setting). The
+modules must be available in any subdirectory in C<@INC>.
 
   # make sure the website modules are available from @INC
   use lib 'mylib';
@@ -484,6 +483,40 @@ only have it generate a friendly response.
 
 Port to listen on when running the standalone HTTP server. This defaults to the
 C<TUWF_HTTP_SERVER_PORT> environment variable, or 3000 if it is not set.
+
+=item import_modules
+
+This setting controls whether C<TUWF::load()> and C<TUWF::load_recursive()>
+will import all public functions into the C<TUWF::Object> namespace.
+
+For example, with C<import_modules> enabled, a module can add a
+C<tuwf->htmlFramework()> method as follows:
+
+  package My::Package;
+  use TUWF;
+  use Exporter 'import';
+
+  our @EXPORT = ('htmlFramework');
+  sub htmlFramework {
+    # ..
+  }
+
+The same can still be done with C<import_modules> set to a false value, but it
+will work slightly differently:
+
+  package My::Package;
+  use TUWF;
+
+  sub TUWF::Object::htmlFramework {
+    # ..
+  }
+  # Or:
+  *TUWF::Object::htmlFramework = sub {
+    # ..
+  };
+
+This setting defaults to true, but that's only for historical reasons. The
+latter style is recommended for new projects.
 
 =item logfile
 

@@ -24,6 +24,7 @@ our $OBJ = bless {
       after => [],
     },
     # defaults
+    import_modules => 1,
     mail_from => '<noreply-yawf@blicky.net>',
     mail_sendmail => '/usr/sbin/sendmail',
     max_post_body => 10*1024*1024, # 10MB
@@ -108,7 +109,7 @@ sub set {
 
 sub run {
   # load the database module if requested
-  $OBJ->_load_module('TUWF::DB') if $OBJ->{_TUWF}{db_login};
+  $OBJ->_load_module('TUWF::DB', 1) if $OBJ->{_TUWF}{db_login};
 
   # install a warning handler to write to the log file
   $SIG{__WARN__} = sub { $TUWF::OBJ->log($_) for @_; };
@@ -194,7 +195,7 @@ sub hook ($&) {
 
 # Load modules
 sub load {
-  $OBJ->_load_module($_) for (@_);
+  $OBJ->_load_module($_, $OBJ->{import_modules}) for (@_);
 }
 
 # Load modules, recursively
@@ -204,7 +205,7 @@ sub load_recursive {
   $rec = sub {
     my($d, $f, $m) = @_;
     for my $s (glob "\"$d/$f/*\"") {
-      $OBJ->_load_module("${m}::$1") if -f $s && $s =~ /([^\/]+)\.pm$/;
+      $OBJ->_load_module("${m}::$1", $OBJ->{import_modules}) if -f $s && $s =~ /([^\/]+)\.pm$/;
       $rec->($d, "$f/$1", "${m}::$1") if -d $s && $s =~ /([^\/]+)$/;
     }
   };
@@ -212,7 +213,7 @@ sub load_recursive {
     (my $f = $m) =~ s/::/\//g;
     my $d = (grep +(-d "$_/$f" or -s "$_/$f.pm"), @INC)[0];
     croak "No module or submodules of '$m' found" if !$d;
-    $OBJ->_load_module($m) if -s "$d/$f.pm";
+    $OBJ->_load_module($m, $OBJ->{import_modules}) if -s "$d/$f.pm";
     $rec->($d, $f, $m) if -d "$d/$f";
   }
 }
@@ -316,8 +317,11 @@ our @CARP_NOT = ('TUWF');
 
 
 sub _load_module {
-  my($self, $module) = @_;
-  Carp::croak $@ if !eval "use $module; 1";
+  my($self, $module, $import) = @_;
+  my $r = $import
+    ? eval "use $module; 1"
+    : eval "require $module; 1";
+  Carp::croak $@ if !$r;
 }
 
 
