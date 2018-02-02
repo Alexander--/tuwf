@@ -195,7 +195,7 @@ sub hook ($&) {
 
 # Load modules
 sub load {
-  $OBJ->_load_module($_, $OBJ->{import_modules}) for (@_);
+  $OBJ->_load_module($_, $OBJ->{_TUWF}{import_modules}) for (@_);
 }
 
 # Load modules, recursively
@@ -205,7 +205,7 @@ sub load_recursive {
   $rec = sub {
     my($d, $f, $m) = @_;
     for my $s (glob "\"$d/$f/*\"") {
-      $OBJ->_load_module("${m}::$1", $OBJ->{import_modules}) if -f $s && $s =~ /([^\/]+)\.pm$/;
+      $OBJ->_load_module("${m}::$1", $OBJ->{_TUWF}{import_modules}) if -f $s && $s =~ /([^\/]+)\.pm$/;
       $rec->($d, "$f/$1", "${m}::$1") if -d $s && $s =~ /([^\/]+)$/;
     }
   };
@@ -213,7 +213,7 @@ sub load_recursive {
     (my $f = $m) =~ s/::/\//g;
     my $d = (grep +(-d "$_/$f" or -s "$_/$f.pm"), @INC)[0];
     croak "No module or submodules of '$m' found" if !$d;
-    $OBJ->_load_module($m, $OBJ->{import_modules}) if -s "$d/$f.pm";
+    $OBJ->_load_module($m, $OBJ->{_TUWF}{import_modules}) if -s "$d/$f.pm";
     $rec->($d, $f, $m) if -d "$d/$f";
   }
 }
