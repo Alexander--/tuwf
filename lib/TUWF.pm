@@ -331,6 +331,9 @@ sub _handle_request {
 
   my $start = [Time::HiRes::gettimeofday()] if $self->debug || $OBJ->{_TUWF}{log_slow_pages};
 
+  $self->{_TUWF}{captures_pos} = [];
+  $self->{_TUWF}{captures_named} = {};
+
   # put everything in an eval to catch any error, even
   # those caused by a TUWF core module
   my $eval = eval {
@@ -345,15 +348,7 @@ sub _handle_request {
     );
 
     # initialize request
-    my $err = $self->reqInit();
-    if($err) {
-      warn "Client sent non-UTF-8-encoded data. Generating HTTP 400 response.\n" if $err eq 'utf8';
-      warn "Client sent an invalid JSON object. Generating HTTP 400 response.\n" if $err eq 'json';
-      $self->{_TUWF}{error_400_handler}->($self) if $err eq 'utf8' || $err eq 'json';
-      $self->{_TUWF}{error_405_handler}->($self) if $err eq 'method';
-      $self->{_TUWF}{error_413_handler}->($self) if $err eq 'maxpost';
-      return 1;
-    }
+    $self->reqInit();
 
     # make sure our DB connection is still there and start a new transaction
     $self->dbCheck() if $self->{_TUWF}{db_login};
@@ -363,31 +358,40 @@ sub _handle_request {
 
     # run 'before' hooks
     for (@{$self->{_TUWF}{hooks}{before}}) {
-      return 1 if !$_->();
+      my $ok = eval { $_->(); 1; };
+      next     if $ok;
+      next     if ref $@ eq 'TUWF::Exception' && ${$@} eq 'pass';
+      return 1 if ref $@ eq 'TUWF::Exception' && ${$@} eq 'done';
+      die $@;
     }
 
     # find the handler
     my $loc = sprintf '%s %s', $self->reqMethod(), $self->reqPath();
     study $loc;
-    my $han = $self->{_TUWF}{error_404_handler};
-    $self->{_TUWF}{captures_pos} = [];
-    $self->{_TUWF}{captures_named} = {};
+    my $han = 0;
     my $handlers = $self->{_TUWF}{route_handlers};
     for (@$handlers ? 0..$#$handlers/2 : ()) {
       if($loc =~ $handlers->[$_*2]) {
+        $han = 1;
         $self->{_TUWF}{captures_pos} = [
           map defined $-[$_] ? substr $loc, $-[$_], $+[$_]-$-[$_] : undef, 1..$#-
         ];
         $self->{_TUWF}{captures_named} = { %+ };
-        $han = $handlers->[$_*2+1];
-        last;
+
+        my $ok = eval { $handlers->[$_*2+1]->($self); 1 };
+        last if $ok;
+        ($han = 0, next) if ref $@ eq 'TUWF::Exception' && ${$@} eq 'pass';
+        last             if ref $@ eq 'TUWF::Exception' && ${$@} eq 'done';
+        die $@;
       }
     }
 
-    # execute handler
-    $han->($self);
+    die TUWF::Exception->new(404) if !$han;
 
-    # execute post request handler, if any
+    # execute post request handler, if any (no need to bother doing this if the
+    # handler threw a TUWF::Exception like with the after hooks. The
+    # post_request_handler is deprecated and that mechanism didn't exist back
+    # then anyway).
     $self->{_TUWF}{post_request_handler}->($self) if $self->{_TUWF}{post_request_handler};
     1;
   };
@@ -395,7 +399,13 @@ sub _handle_request {
 
   # always run 'after' hooks
   my $cleanup = eval {
-    $_->() for (@{$self->{_TUWF}{hooks}{after}});
+    for (@{$self->{_TUWF}{hooks}{after}}) {
+      my $ok = eval { $_->(); 1 };
+      next if $ok;
+      next if ref $@ eq 'TUWF::Exception' && ${$@} eq 'pass';
+      next if ref $@ eq 'TUWF::Exception' && ${$@} eq 'done';
+      die $@;
+    }
     1;
   };
   my $cleanuperr = $@;
@@ -410,35 +420,7 @@ sub _handle_request {
   my $commiterr = $@;
 
   # error handling
-  if(!$eval || !$cleanup || !$commit) {
-    chomp( my $err = $evalerr || $cleanuperr || $commiterr );
-
-    # act as if the changes to the DB never happened
-    warn $@ if $self->{_TUWF}{db_login} && !eval { $self->dbRollBack; 1 };
-
-    # Call the error_500_handler
-    # The handler should manually call dbCommit if it makes any changes to the DB
-    my $eval500 = eval {
-      $self->resInit;
-      $self->{_TUWF}{error_500_handler}->($self, $err);
-      1;
-    };
-    if(!$eval500) {
-      chomp( my $m = $@ );
-      warn "Error handler died as well, something is seriously wrong with your code. ($m)\n";
-      TUWF::_error_500($self, $err);
-    }
-
-    # write detailed information about this error to the log
-    $self->log(
-      "FATAL ERROR!\n".
-      "HTTP Request Headers:\n".
-      join('', map sprintf("  %s: %s\n", $_, $self->reqHeader($_)), $self->reqHeader).
-      "POST dump:\n".
-      join('', map sprintf("  %s: %s\n", $_, join "\n    ", $self->reqPosts($_)), $self->reqPosts).
-      "Error:\n  $err\n"
-    );
-  }
+  $self->_handle_error($evalerr || $cleanuperr || $commiterr) if !$eval || !$cleanup || !$commit;
 
   # finalize response (flush output, etc)
   warn $@ if !eval { $self->resFinish; 1 };
@@ -456,6 +438,57 @@ sub _handle_request {
 
     $self->log(sprintf('%4dms (SQL:%4dms,%3d qs)', $time, $sqlt, $sqlc));
   }
+}
+
+
+sub _handle_error {
+  my($self, $err) = @_;
+  my $terr = ref $err eq 'TUWF::Exception' ? $$err : '';
+
+  # act as if the changes to the DB never happened
+  warn $@ if $self->{_TUWF}{db_login} && !eval { $self->dbRollBack; 1 };
+
+  warn "Client sent non-UTF-8-encoded data. Generating HTTP 400 response.\n" if $terr eq 'utf8';
+  warn "Client sent control characters in strings. Generating HTTP 400 response.\n" if $terr eq 'controlchar';
+  warn "Client sent an invalid JSON object. Generating HTTP 400 response.\n" if $terr eq 'json';
+
+  my $han = {
+    utf8        => 400,
+    json        => 400,
+    controlchar => 400,
+    404         => 404,
+    method      => 405,
+    maxpost     => 413,
+  }->{$terr} || '500';
+
+  my $ok = eval {
+    $self->resInit;
+    $self->{_TUWF}{"error_${han}_handler"}->($self, $err);
+    1;
+  };
+  if(!$ok) {
+    $err = $@;
+    $ok = eval {
+      $self->resInit;
+      $self->{_TUWF}{error_500_handler}->($self, $err);
+      1;
+    };
+  }
+  if(!$ok) {
+    $err = $@;
+    warn "Error handler died as well, something is seriously wrong with your code. ($err)\n";
+    TUWF::_error_500($self, $err);
+  }
+
+  # If this is an unexpected error, write detailed information to the log
+  $self->log(
+    "FATAL ERROR!\n".
+    "HTTP Request Headers:\n".
+    join('', map sprintf("  %s: %s\n", $_, $self->reqHeader($_)), $self->reqHeader).
+    "POST dump:\n".
+    join('', map sprintf("  %s: %s\n", $_, join "\n    ", $self->reqPosts($_)), $self->reqPosts).
+    "Error:\n  $err\n"
+  ) if ref $err ne 'TUWF::Exception';
 }
 
 
@@ -497,6 +530,16 @@ sub log {
 }
 
 
+sub pass {
+  die TUWF::Exception->new('pass');
+}
+
+
+sub done {
+  die TUWF::Exception->new('done');
+}
+
+
 
 # Minimal subclass of HTTP::Server::Simple with CGI environment variables.
 package TUWF::http;
@@ -517,5 +560,13 @@ sub handler {
 };
 
 
-1;
 
+
+# Objects for die() (just blessed strings)
+package TUWF::Exception;
+
+use overload '""' => sub { "TUWF::Exception: ${$_[0]}" };
+
+sub new { bless \"$_[1]", $_[0] }
+
+1;

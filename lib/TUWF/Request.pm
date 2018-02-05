@@ -25,29 +25,29 @@ sub reqInit {
       if ($ENV{REQUEST_URI}||'') =~ /\?/;
   }
 
-  my $err = eval {
+  my $ok = eval {
     $self->{_TUWF}{Req}{Cookies} = _parse_cookies($self, $ENV{HTTP_COOKIE} || $ENV{COOKIE});
     $self->{_TUWF}{Req}{GET} = _parse_urlencoded($ENV{QUERY_STRING});
     $self->reqPath(); # let it croak when the path isn't valid UTF-8
     1;
   };
-  return 'utf8' if !$err && $@ && $@ =~ /does not map to Unicode/; # <- UGLY!
+  die TUWF::Exception->new('utf8') if !$ok && $@ && $@ =~ /does not map to Unicode/; # <- UGLY!
   # re-throw if it wasn't a UTF-8 problem. I don't expect this to happen
-  die $@ if !$err;
+  die $@ if !$ok;
 
   my $meth = $self->reqMethod;
-  return 'method' if $meth !~ /^(GET|POST|HEAD|DEL|OPTIONS|PUT|PATCH)$/;
+  die TUWF::Exception->new('method') if $meth !~ /^(GET|POST|HEAD|DEL|OPTIONS|PUT|PATCH)$/;
 
   if($meth =~ /^(POST|PUT|PATCH)$/ && $ENV{CONTENT_LENGTH}) {
-    return 'maxpost' if $self->{_TUWF}{max_post_body} && $ENV{CONTENT_LENGTH} > $self->{_TUWF}{max_post_body};
+    die TUWF::Exception->new('maxpost') if $self->{_TUWF}{max_post_body} && $ENV{CONTENT_LENGTH} > $self->{_TUWF}{max_post_body};
 
     my $data;
     die "Couldn't read all request data.\n" if $ENV{CONTENT_LENGTH} > read STDIN, $data, $ENV{CONTENT_LENGTH}, 0;
 
-    $err = eval {
+    $ok = eval {
       if(($ENV{'CONTENT_TYPE'}||'') =~ m{^application/json(?:;.*)?$}) {
         $self->{_TUWF}{Req}{JSON} = _parse_json($data);
-        return 'json' if !$self->{_TUWF}{Req}{JSON};
+        die TUWF::Exception->new('json') if !$self->{_TUWF}{Req}{JSON};
       } elsif(($ENV{'CONTENT_TYPE'}||'') =~ m{^multipart/form-data; boundary=(.+)$}) {
         _parse_multipart($self, $data, $1);
       } else {
@@ -55,18 +55,15 @@ sub reqInit {
       }
       1;
     };
-    return 'utf8' if !$err && $@ && $@ =~ /does not map to Unicode/;
-    die $@ if !$err;
+    die TUWF::Exception->new('utf8') if !$ok && $@ && $@ =~ /does not map to Unicode/;
+    die $@ if !$ok;
   }
-
-  return '';
 }
 
 
 sub _check_control {
   # Disallow any control codes, except for x09 (tab), x0a (newline) and x0d (carriage return)
-  # The error message is a hack to trigger the 'utf8' error code.
-  die "Illegal control code (does not map to Unicode)" if $_[0] =~ /[\x00-\x08\x0b\x0c\x0e-\x1f]/;
+  die TUWF::Exception->new('controlchar') if $_[0] =~ /[\x00-\x08\x0b\x0c\x0e-\x1f]/;
   $_[0]
 }
 

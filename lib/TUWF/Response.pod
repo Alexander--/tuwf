@@ -210,8 +210,7 @@ Examples:
   # Serve a file in '/webroot/public' if it exists,
   # otherwise handle the request as usual.
   TUWF::hook before => sub {
-    return 0 if tuwf->resFile('/webroot/public', tuwf->reqPath);
-    return 1;
+    tuwf->done if tuwf->resFile('/webroot/public', tuwf->reqPath);
   };
 
 You might also want to set proper caching headers if the static files don't

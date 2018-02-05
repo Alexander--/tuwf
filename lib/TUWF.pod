@@ -277,20 +277,20 @@ hooks are supported:
 
 =item before
 
-Your subroutine will be called before the request handler. The subroutine
-B<must> return a true value to indicate that TUWF can continue processing the
-request as usual. If the subroutine returns false, TUWF will assume the
-subroutine has generated a response and will halt any further processing. This
-hook can be used used to initialize or reset request-specific data (such as
-authentication), or to perform some checks that should apply to every route.
+The subroutine will be called before the request handler. If this handler calls
+C<< tuwf->done >>, then TUWF will assume that the handler has generated a
+suitable response, and any subsequent I<before> handlers and request handlers
+will not be called.
 
 This replaces the L<pre_request_handler|/pre_request_handler> setting.
 
 =item after
 
 Called after the request handler has run, but before the result has been sent
-to the client. This hook is always called, even if a I<before> hook has
-returned false or if a route handler threw an exception.
+to the client. This hook is B<always> called, even if a I<before> hook has
+called C<< tuwf->done >> or if a route handler threw an exception. (The only
+time an I<after> hook may not be called is when a preceding I<after> hook threw
+an exception).
 
 This replaces the L<post_request_handler|/post_request_handler> setting.
 
@@ -587,15 +587,18 @@ The default MIME type for extensions not covered in L<mime_types|/mime_types>.
 
 =item pre_request_handler
 
-(Deprecated) Equivalent to a I<before> hook, see
-L<TUWF::hook()|/TUWF::hook($hook, $sub)>.
+(Deprecated) Similar to a I<before> hook, see
+L<TUWF::hook()|/TUWF::hook($hook, $sub)>. Unlike the I<before> hook, this
+subroutine should not call C<< tuwf->done >> or C<< tuwf->pass >>, but instead
+return a false value to send the response and prevent further processing, or
+return a true value to continue processing further handlers.
 
 =item post_request_handler
 
 (Deprecated) Equivalent to an I<after> hook, see
 L<TUWF::hook()|/TUWF::hook($hook, $sub)>. One notable difference is that this
-callback will B<not> run when a I<before> hook returned false or if a route
-handler threw an exception.
+callback will B<not> run when a I<before> hook or request handler threw an
+exception or called C<< tuwf->done() >>.
 
 =item validate_templates
 
@@ -656,6 +659,36 @@ C<< tuwf->reqPath >>, save for the leading slash.
 
 Returns the value of the I<debug> setting.
 
+=head2 done()
+
+Calling this method will immediately abort the current handler, run the
+I<after> hooks, and output the response. When called from a I<before> hook,
+this will prevent running any further I<before> hooks or request handlers.
+
+Calling this method from a request handler is equivalent to a normal return
+from the handler, but it can still be useful to force a response from a nested
+function call, e.g.:
+
+  sub require_admin {
+    if(!user_is_admin()) {
+      # Generate a friendly error page here.
+      # ...and send it to the client:
+      tuwf->done;
+    }
+  }
+
+  TUWF::get '/admin' => sub {
+    require_admin();
+    # At this point we can be sure that the user is an administrator, and
+    # continue to generate our page.
+  };
+
+Calling this method from a I<after> hook has no effect other than prematurely
+aborting that particular hook.
+
+This method calls C<die()>, so be sure to re-throw the error when run inside an
+eval block.
+
 =head2 log(message)
 
 Writes a message to the log file configured with I<logfile>. When no log file
@@ -669,7 +702,18 @@ This function is not used very often in practice, since it is easier to simply
 use Perl's C<warn()> function instead. TUWF automatically writes all warnings
 to the log file.
 
+=head2 pass()
 
+Calling this method will immediately abort the current handler and move on to
+the next handler (if any). Any side effects (e.g. setting response headers,
+generating output) will remain. If the final handler calls C<pass()>, then any
+response data is discarded and a 404 response is generated instead.
+
+Calling this method from a I<after> hook has no effect other than prematurely
+aborting that particular hook.
+
+This method calls C<die()>, so be sure to re-throw the error when run inside an
+eval block.
 
 =head1 SERVER CONFIGURATION
 
