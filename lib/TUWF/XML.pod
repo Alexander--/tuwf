@@ -130,8 +130,8 @@ Note that the order in which classes are returned may be somewhat random.
 
 =head2 xml_escape(string)
 
-Returns the XML-escaped string. The characters C<&>, C<E<lt>>, C<E<gt>> and
-C<"> will be replaced with their XML entity.
+Returns the XML-escaped string. The characters C<&>, C<E<lt>>, and C<"> will be
+replaced with their XML entity.
 
 =head2 html_escape(string)
 

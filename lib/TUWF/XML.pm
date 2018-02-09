@@ -117,17 +117,15 @@ sub mkclass {
 
 
 # XML escape (not a method)
+my %XML = qw/& &amp; < &lt; " &quot;/;
 sub xml_escape {
-  local $_ = shift;
+  local $_ = $_[0];
   if(!defined $_) {
     carp "Attempting to XML-escape an undefined value";
     return '';
   }
-  s/&/&amp;/g;
-  s/</&lt;/g;
-  s/>/&gt;/g;
-  s/"/&quot;/g;
-  return $_;
+  s/([&<"])/$XML{$1}/g;
+  $_;
 }
 
 # HTML escape, also does \n to <br /> conversion
