@@ -192,8 +192,7 @@ sub resJSON {
 
   $self->resHeader('Content-Type' => 'application/json; charset=UTF-8');
   $self->resBuffer('clear');
-  my $fd = $self->resFd();
-  print $fd JSON::XS::encode_json($obj);
+  $self->resBinary(JSON::XS::encode_json($obj));
 }
 
 
