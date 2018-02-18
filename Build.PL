@@ -4,7 +4,7 @@ use Module::Build;
 
 Module::Build->new(
   dist_name     => 'TUWF',
-  dist_version  => '1.1',
+  dist_version  => '1.2',
   dist_author   => 'Yoran Heling <projects@yorhel.nl>',
   dist_abstract => 'The Ultimate Website Framework',
   license       => 'mit',
@@ -20,7 +20,8 @@ Module::Build->new(
   },
   meta_merge => {
     resources => {
-      repository => 'https://g.blicky.net/tuwf.git/'
+      repository => 'https://g.blicky.net/tuwf.git/',
+      homepage   => 'https://dev.yorhel.nl/tuwf'
     },
   },
   create_makefile_pl => 'traditional',

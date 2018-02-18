@@ -7,7 +7,7 @@ use Carp 'croak';
 use Exporter 'import';
 use Time::HiRes 'time';
 
-our $VERSION = '1.1';
+our $VERSION = '1.2';
 our @EXPORT = qw|
   dbInit dbh dbCheck dbDisconnect dbCommit dbRollBack
   dbExec dbVal dbRow dbAll dbPage
