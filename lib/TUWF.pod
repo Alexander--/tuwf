@@ -8,6 +8,8 @@ TUWF is a small framework designed for writing websites. It provides an
 abstraction layer to various environment-specific tasks and has common
 functions to ease the creation of both small and large websites.
 
+For a gentle introduction to TUWF, see L<TUWF::Intro>.
+
 
 =head2 Main features and limitations
 
@@ -826,7 +828,8 @@ FastCGI:
 
 =head1 SEE ALSO
 
-L<TUWF::DB>, L<TUWF::Misc>, L<TUWF::Request>, L<TUWF::Response>, L<TUWF::XML>.
+L<TUWF::Intro>, L<TUWF::DB>, L<TUWF::Misc>, L<TUWF::Request>, L<TUWF::Response>,
+L<TUWF::XML>.
 
 The homepage of TUWF can be found at
 L<https://dev.yorhel.nl/tuwf|https://dev.yorhel.nl/tuwf>.
