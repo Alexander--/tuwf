@@ -9,6 +9,7 @@ use Carp 'croak';
 use Exporter 'import';
 use Encode 'encode_utf8';
 use Scalar::Util 'looks_like_number';
+use TUWF::Validate;
 
 
 our $VERSION = '1.2';
@@ -32,13 +33,6 @@ sub _template_validate_num {
   return 1;
 }
 
-my $re_fqdn      = qr/(?:[a-zA-Z0-9][\w-]*\.)+[a-zA-Z][a-zA-Z0-9-]{1,25}\.?/;
-my $re_ip4_digit = qr/(?:0|[1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/;
-my $re_ip4       = qr/($re_ip4_digit\.){3}$re_ip4_digit/;
-# This monstrosity is based on http://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
-# Doesn't allow IPv4-mapped-IPv6 addresses or other fancy stuff.
-my $re_ip6       = qr/(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?:(?::[0-9a-fA-F]{1,4}){1,6})|:(?:(?::[0-9a-fA-F]{1,4}){1,7}|:)/;
-my $re_domain    = qr/(?:$re_fqdn|$re_ip4|\[$re_ip6\])/;
 
 my %default_templates = (
   # JSON number format, regex from http://stackoverflow.com/questions/13340717/json-numbers-regular-expression
@@ -46,8 +40,8 @@ my %default_templates = (
   int    => { func => \&_template_validate_num, regex => qr/^-?(?:0|[1-9]\d*)$/, inherit => ['min','max'] },
   uint   => { func => \&_template_validate_num, regex => qr/^(?:0|[1-9]\d*)$/, inherit => ['min','max'] },
   ascii  => { regex => qr/^[\x20-\x7E]*$/ },
-  email  => { regex => qr/^[-\+\.#\$=\w]+\@$re_domain$/, maxlength => 254 },
-  weburl => { regex => qr/^https?:\/\/$re_domain(?::[1-9][0-9]{0,5})?\/[^\s<>"]*$/, maxlength => 65536 }, # the maxlength is a bit arbitrary, but better than unlimited
+  email  => { regex => $TUWF::Validate::re_email, maxlength => 254 },
+  weburl => { regex => $TUWF::Validate::re_weburl, maxlength => 65536 }, # the maxlength is a bit arbitrary, but better than unlimited
 );
 
 
