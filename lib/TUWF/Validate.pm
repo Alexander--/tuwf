@@ -167,6 +167,9 @@ sub _compile {
 
 sub compile {
   my($validations, $schema) = @_;
+
+  return $schema if ref $schema eq __PACKAGE__;
+
   my $c = _compile $validations, $schema, 64;
 
   $c->{schema}{type} //= 'scalar';

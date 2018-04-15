@@ -404,6 +404,14 @@ all cookies not having the configured prefix never existed, and removes the
 prefix when used in list context. C<resCookie()> will simply add the prefix to
 all outgoing cookies. Default: undef (disabled).
 
+=item custom_validations
+
+Hashref, custom validations for the L<compile()|TUWF::Misc> and
+L<validate()|TUWF::Misc> functions. The recommended way to add new templates is
+to call C<TUWF::set()> with a single argument:
+
+  TUWF::set('custom_validations')->{$key} = \%schema;
+
 =item db_login
 
 Sets the login information for the L<TUWF::DB|TUWF::DB> functions. Can be set
@@ -829,7 +837,7 @@ FastCGI:
 =head1 SEE ALSO
 
 L<TUWF::Intro>, L<TUWF::DB>, L<TUWF::Misc>, L<TUWF::Request>, L<TUWF::Response>,
-L<TUWF::XML>.
+L<TUWF::XML>, L<TUWF::Validate>.
 
 The homepage of TUWF can be found at
 L<https://dev.yorhel.nl/tuwf|https://dev.yorhel.nl/tuwf>.

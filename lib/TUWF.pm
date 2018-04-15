@@ -38,6 +38,7 @@ our $OBJ = bless {
       sprintf "[%s] %s -> %s\n", scalar localtime(), $uri, $msg;
     },
     validate_templates => {},
+    custom_validations => {},
     # No particular selection of MIME types
     mime_types => {qw{
       7z     application/x-7z-compressed
