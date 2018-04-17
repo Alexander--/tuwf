@@ -70,7 +70,7 @@ sub _check_control {
 
 sub _store {
   return push @{$_[0]}, $_[1] if ref $_[0];
-  $_[0] = $_[0] ? [$_[0], $_[1]] : $_[1];
+  $_[0] = defined $_[0] ? [$_[0], $_[1]] : $_[1];
 }
 
 
@@ -186,7 +186,7 @@ sub _tablegets {
   my $lst = $s->{_TUWF}{Req}{$k};
   return keys %$lst if @_ == 2;
   my $v = $lst->{$n};
-  ref $v ? @$v : $v ? ($v) : ();
+  ref $v ? @$v : defined $v ? ($v) : ();
 }
 
 
@@ -219,8 +219,8 @@ sub reqParams {
   my $p = $nfo->{POST}{$n};
   my $g = $nfo->{GET}{$n};
   return (
-    ref $p ? @$p : $p ? ($p) : (),
-    ref $g ? @$g : $g ? ($g) : (),
+    ref $p ? @$p : defined $p ? ($p) : (),
+    ref $g ? @$g : defined $g ? ($g) : (),
   );
 }
 
