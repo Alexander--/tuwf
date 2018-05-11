@@ -116,6 +116,13 @@ t { type => 'hash', length => 1, unknown => 'accept' }, {qw/1 a 2 b/}, {qw/1 a 2
 t { type => 'hash', length => 1, keys => {a => {required=>0}, b => {required=>0}} }, {a=>1}, {a=>1}, undef;
 t { regex => '^a' }, 'abc', 'abc', undef;  # XXX: Can't use qr// here because t() does dclone(). The 'hex' test covers that case anyway.
 t { regex => '^a' }, 'cba', 'cba', { validation => 'regex', regex => '^a', got => 'cba' };
+t { enum => [1,2] }, 1, 1, undef;
+t { enum => [1,2] }, 2, 2, undef;
+t { enum => [1,2] }, 3, 3, { validation => 'enum', expected => [1,2], got => 3 };
+t { enum => 1 }, 1, 1, undef;
+t { enum => 1 }, 2, 2, { validation => 'enum', expected => [1], got => 2 };
+t { enum => {a=>1,b=>2} }, 'a', 'a', undef;
+t { enum => {a=>1,b=>2} }, 'c', 'c', { validation => 'enum', expected => ['a','b'], got => 'c' };
 t { anybool => 1 }, 1, 1, undef;
 t { anybool => 1 }, undef, 0, undef;
 t { anybool => 1 }, '', 0, undef;

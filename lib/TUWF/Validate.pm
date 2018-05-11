@@ -62,6 +62,11 @@ our %default_validations = (
     # error object to ensure that.
     +{ type => 'scalar', func => sub { $_[0] =~ $reg ? 1 : { regex => "$reg", got => $_[0] } } }
   },
+  enum => sub {
+    my @l = ref $_[0] eq 'HASH' ? sort keys %{$_[0]} : ref $_[0] eq 'ARRAY' ? @{$_[0]} : ($_[0]);
+    my %opts = map +($_,1), @l;
+    +{ type => 'scalar', func => sub { $opts{ (my $v = $_[0]) } ? 1 : { expected => \@l, got => $_[0] } } }
+  },
 
   minlength => _length(sub { $_[0] >= $_[1] }),
   maxlength => _length(sub { $_[0] <= $_[1] }),
