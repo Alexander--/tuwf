@@ -487,7 +487,10 @@ sub _handle_error {
     "HTTP Request Headers:\n".
     join('', map sprintf("  %s: %s\n", $_, $self->reqHeader($_)), $self->reqHeader).
     "POST dump:\n".
-    join('', map sprintf("  %s: %s\n", $_, join "\n    ", $self->reqPosts($_)), $self->reqPosts).
+    ($self->reqJSON()
+      ? JSON::XS->new->pretty->encode($self->reqJSON())
+      : join('', map sprintf("  %s: %s\n", $_, join "\n    ", $self->reqPosts($_)), $self->reqPosts)
+    ).
     "Error:\n  $err\n"
   ) if ref $err ne 'TUWF::Exception';
 }
