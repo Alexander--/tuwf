@@ -78,7 +78,7 @@ our %default_validations = (
     blessed $r && (
          $r->isa('JSON::PP::Boolean')
       || $r->isa('JSON::XS::Boolean')
-      || $r->isa('Types::Serializer::Boolean')
+      || $r->isa('Types::Serialiser::Boolean')
       || $r->isa('Cpanel::JSON::XS::Boolean')
       || $r->isa('boolean')
     ) ? 1 : {};
