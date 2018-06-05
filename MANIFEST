@@ -23,5 +23,5 @@ Makefile.PL
 MANIFEST			This list of files
 META.json
 META.yml
-README
+README.md
 t/kv_validate.t

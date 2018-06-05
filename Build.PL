@@ -20,7 +20,7 @@ Module::Build->new(
   },
   meta_merge => {
     resources => {
-      repository => 'https://g.blicky.net/tuwf.git/',
+      repository => 'https://code.blicky.net/yorhel/tuwf',
       homepage   => 'https://dev.yorhel.nl/tuwf'
     },
   },

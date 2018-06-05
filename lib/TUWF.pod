@@ -843,7 +843,7 @@ The homepage of TUWF can be found at
 L<https://dev.yorhel.nl/tuwf|https://dev.yorhel.nl/tuwf>.
 
 TUWF is available on a git repository at
-L<https://g.blicky.net/tuwf.git/|https://g.blicky.net/tuwf.git/>.
+L<https://code.blicky.net/yorhel/tuwf|https://code.blicky.net/yorhel/tuwf>.
 
 
 =head1 COPYRIGHT
