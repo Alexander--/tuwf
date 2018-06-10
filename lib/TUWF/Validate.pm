@@ -21,26 +21,23 @@ my %builtin = map +($_,1), qw/
 
 
 sub _length {
-  my $op = $_[0];
-  sub {
-    my $len = $_[0];
-    +{ func => sub {
-      my $got = ref $_[0] eq 'HASH' ? keys %{$_[0]} : ref $_[0] eq 'ARRAY' ? @{$_[0]} : length $_[0];
-      $op->($got, $len) ? 1 : { expected => $len, got => $got };
-    }}
-  }
+  my($exp, $min, $max) = @_;
+  +{ _analyze_minlength => $min, _analyze_maxlength => $max, func => sub {
+    my $got = ref $_[0] eq 'HASH' ? keys %{$_[0]} : ref $_[0] eq 'ARRAY' ? @{$_[0]} : length $_[0];
+    (!defined $min || $got >= $min) && (!defined $max || $got <= $max) ? 1 : { expected => $exp, got => $got };
+  }}
 }
 
 # Basically the same as ( regex => $arg ), but hides the regex error
 sub _reg {
   my $reg = $_[0];
-  ( type => 'scalar', func => sub { $_[0] =~ $reg ? 1 : { got => $_[0] } } );
+  ( type => 'scalar', _analyze_regex => "$reg", func => sub { $_[0] =~ $reg ? 1 : { got => $_[0] } } );
 }
 
 
-my  $re_num       = qr/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+our $re_num       = qr/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
 my  $re_int       = qr/^-?(?:0|[1-9]\d*)$/;
-my  $re_uint      = qr/^(?:0|[1-9]\d*)$/;
+our $re_uint      = qr/^(?:0|[1-9]\d*)$/;
 my  $re_fqdn      = qr/(?:[a-zA-Z0-9][\w-]*\.)+[a-zA-Z][a-zA-Z0-9-]{1,25}\.?/;
 my  $re_ip4_digit = qr/(?:0|[1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/;
 my  $re_ip4       = qr/($re_ip4_digit\.){3}$re_ip4_digit/;
@@ -60,7 +57,7 @@ our %default_validations = (
     # Error objects should be plain data structures so that they can easily
     # be converted to JSON for debugging. We have to stringify $reg in the
     # error object to ensure that.
-    +{ type => 'scalar', func => sub { $_[0] =~ $reg ? 1 : { regex => "$reg", got => $_[0] } } }
+    +{ type => 'scalar', _analyze_regex => "$reg", func => sub { $_[0] =~ $reg ? 1 : { regex => "$reg", got => $_[0] } } }
   },
   enum => sub {
     my @l = ref $_[0] eq 'HASH' ? sort keys %{$_[0]} : ref $_[0] eq 'ARRAY' ? @{$_[0]} : ($_[0]);
@@ -68,9 +65,9 @@ our %default_validations = (
     +{ type => 'scalar', func => sub { $opts{ (my $v = $_[0]) } ? 1 : { expected => \@l, got => $_[0] } } }
   },
 
-  minlength => _length(sub { $_[0] >= $_[1] }),
-  maxlength => _length(sub { $_[0] <= $_[1] }),
-  length    => _length(sub { ref $_[1] eq 'ARRAY' ? $_[0] >= $_[1][0] && $_[0] <= $_[1][1] : $_[0] == $_[1] }),
+  minlength => sub { _length $_[0], $_[0] },
+  maxlength => sub { _length $_[0], undef, $_[0] },
+  length    => sub { _length($_[0], ref $_[0] eq 'ARRAY' ? @{$_[0]} : ($_[0], $_[0])) },
 
   anybool   => { type => 'any', required => 0, default => 0, func => sub { $_[0] = $_[0] ? 1 : 0; 1 } },
   jsonbool  => { type => 'any', func => sub {
@@ -90,11 +87,11 @@ our %default_validations = (
   uint => { _reg $re_uint }, # implies num
   min => sub {
     my $min = shift;
-    +{ num => 1, func => sub { $_[0] >= $min ? 1 : { expected => $min, got => $_[0] } } }
+    +{ num => 1, _analyze_min => $min, func => sub { $_[0] >= $min ? 1 : { expected => $min, got => $_[0] } } }
   },
   max => sub {
     my $max = shift;
-    +{ num => 1, func => sub { $_[0] <= $max ? 1 : { expected => $max, got => $_[0] } } }
+    +{ num => 1, _analyze_max => $max, func => sub { $_[0] <= $max ? 1 : { expected => $max, got => $_[0] } } }
   },
   range => sub { +{ min => $_[0][0], max => $_[0][1] } },
 
@@ -122,7 +119,7 @@ sub _compile {
   my @keys = keys %{$schema->{keys}} if $schema->{keys};
 
   for(sort keys %$schema) {
-    if($builtin{$_}) {
+    if($builtin{$_} || /^_analyze_/) {
       $top{$_} = $schema->{$_};
       next;
     }
@@ -345,6 +342,12 @@ sub _validate {
 sub validate {
   my($c, $input) = ref $_[0] eq __PACKAGE__ ? @_ : (compile($_[0], $_[1]), $_[2]);
   bless _validate($c, $input), 'TUWF::Validate::Result';
+}
+
+
+sub analyze {
+  require TUWF::Validate::Interop;
+  TUWF::Validate::Interop::analyze($_[0]);
 }
 
 
