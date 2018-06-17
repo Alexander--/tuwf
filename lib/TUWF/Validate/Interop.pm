@@ -4,13 +4,14 @@ use strict;
 use warnings;
 use TUWF::Validate;
 use Exporter 'import';
+use Carp 'croak';
 our @EXPORT_OK = ('analyze');
 
 
 # Analyzed ("flattened") object:
 #   { type => scalar | bool | num | int | array | hash | any
 #   , min, max, minlength, maxlength, required, regexes
-#   , keys, values
+#   , keys, values, unknown
 #   }
 
 sub _merge_type {
@@ -48,6 +49,7 @@ sub _merge {
 sub _merge_toplevel {
   my($c, $o) = @_;
   $o->{required} ||= $c->{schema}{required};
+  $o->{unknown}  ||= $c->{schema}{unknown};
   $o->{type} = $c->{schema}{type} if !$o->{type} || $o->{type} eq 'any';
 
   _merge $c, $o;
@@ -64,15 +66,22 @@ sub analyze {
 
 # Assumes that $obj already has the required format/structure, odd things may
 # happen if this is not the case.
+#   unknown => remove|reject|pass
 sub coerce_for_json {
-  my($o, $obj) = @_;
+  my($o, $obj, %opt) = @_;
+  $opt{unknown} ||= $o->{unknown};
   return undef if !defined $obj;
   return $obj+0 if $o->{type} eq 'num';
   return int $obj if $o->{type} eq 'int';
   return $obj ? \1 : \0 if $o->{type} eq 'bool';
   return "$obj" if $o->{type} eq 'scalar';
-  return [map $o->{values}->coerce_for_json($_), @$obj] if $o->{type} eq 'array' && $o->{values};
-  return {map +($_, $o->{keys}{$_} ? $o->{keys}{$_}->coerce_for_json($obj->{$_}) : $obj->{$_}), keys %$obj} if $o->{type} eq 'hash' && $o->{keys};
+  return [map $o->{values}->coerce_for_json($_, %opt), @$obj] if $o->{type} eq 'array' && $o->{values};
+  return {map {
+        $o->{keys}{$_}            ? ($_, $o->{keys}{$_}->coerce_for_json($obj->{$_}, %opt)) :
+        $opt{unknown} eq 'pass'   ? ($_, $obj->{$_}) :
+        $opt{unknown} eq 'remove' ? ()
+                                  : croak "Unknown key '$_' in hash in coerce_for_json()"
+  } keys %$obj} if $o->{type} eq 'hash' && $o->{keys};
   $obj
 }
 

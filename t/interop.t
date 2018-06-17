@@ -52,6 +52,7 @@ my @serialized = (
   [ { type => 'array', values => {anybool=>1} }, ['a',1,0], '[true,true,false]' ],
   [ { type => 'hash' }, {}, '{}' ],
   [ { type => 'hash' }, {a=>1,b=>'2'}, '{"a":1,"b":"2"}' ],
+  [ { type => 'hash', keys => {b=>{}} }, {}, '{}' ],
   [ { type => 'hash', keys => {a=>{anybool=>1},b=>{int=>1}} }, {a=>1,b=>'10'}, '{"a":true,"b":10}' ],
   [ { required => 0 }, undef, 'null' ],
   [ { required => 0, jsonbool => 1 }, undef, 'null' ],
@@ -65,14 +66,18 @@ subtest 'JSON::XS coercion', sub {
   eval { require JSON::XS; 1 } or plan skip_all => 'JSON::XS not installed';
   my @extra = (
     [ { type => 'num' }, '10', '10' ],
-    [ { type => 'hash', keys => {a=>{anybool=>1},b=>{int=>1}} }, {a=>1,b=>'10',c=>[]}, '{"a":true,"b":10,"c":[]}' ],
+    [ { type => 'hash', keys => {a=>{anybool=>1},b=>{int=>1}} }, {a=>1,b=>'10',c=>[]}, '{"a":true,"b":10}' ],
+    [ { type => 'hash', unknown => 'pass', keys => {a=>{anybool=>1},b=>{int=>1}} }, {a=>1,b=>'10',c=>[]}, '{"a":true,"b":10,"c":[]}' ],
   );
+  my $js = JSON::XS->new->canonical->allow_nonref;
   for (@serialized, @extra) {
     my($schema, $in, $out) = @$_;
     my $inc = dclone([$in])->[0];
-    is(JSON::XS->new->canonical->allow_nonref->encode(compile({}, $schema)->analyze->coerce_for_json($in)), $out);
+    is($js->encode(compile({}, $schema)->analyze->coerce_for_json($in)), $out);
     is_deeply $inc, $in;
   }
+  is($js->encode(compile({}, { type => 'hash', keys => {} })->analyze->coerce_for_json({a=>1}, unknown => 'pass')), '{"a":1}');
+  ok !eval { $js->encode(compile({}, { type => 'hash', keys => {} })->analyze->coerce_for_json({a=>1}, unknown => 'reject')); 1 };
 };
 
 subtest 'Cpanel::JSON::XS coercion', sub {
