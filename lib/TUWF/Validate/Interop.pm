@@ -138,7 +138,7 @@ sub html5_validation {
 
 
 
-# The elm_ are experimental, unstable, not very well-tested and for Elm 0.18
+# The elm_ are experimental, unstable, not very well-tested and for Elm 0.19
 
 # Options: required any array values keys indent level
 sub elm_type {
@@ -190,7 +190,7 @@ sub elm_encoder {
   return "$opt{json_encode}float"  if $o->{type} eq 'num';
   return "$opt{json_encode}int"    if $o->{type} eq 'int';
   return $opt{any}                 if $o->{type} eq 'any' && $opt{any};
-  return sprintf '(%slist << List.map %s)', $opt{json_encode}, $opt{values} || $o->{values}->elm_encoder(%opt)
+  return sprintf '(%slist %s)', $opt{json_encode}, $opt{values} || $o->{values}->elm_encoder(%opt)
     if $o->{type} eq 'array' && ($opt{values} || $o->{values});
 
   if($o->{type} eq 'hash' && ($o->{keys} || $opt{keys})) {
