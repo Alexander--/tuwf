@@ -29,6 +29,9 @@ sub _merge {
   my($c, $o) = @_;
 
   _merge_type $c, $o;
+
+  $o->{required} = 1 if ($c->{name}||'') eq 'anybool';
+
   $o->{values} = _merge_toplevel($c->{schema}{values}, $o->{values}||{}) if $c->{schema}{values};
 
   if($c->{schema}{keys}) {
@@ -50,6 +53,7 @@ sub _merge_toplevel {
   my($c, $o) = @_;
   $o->{required} ||= $c->{schema}{required};
   $o->{unknown}  ||= $c->{schema}{unknown};
+  $o->{default}  = $c->{schema}{default} if exists $c->{schema}{default};
   $o->{type} = $c->{schema}{type} if !$o->{type} || $o->{type} eq 'any';
 
   _merge $c, $o;
@@ -130,6 +134,84 @@ sub html5_validation {
     defined $o->{max}       ? (max       => $o->{max}      ) : (),
     $o->{regexes} ? (pattern => _join_regexes $o->{regexes}) : (),
   );
+}
+
+
+
+# The elm_ are experimental, unstable, not very well-tested and for Elm 0.18
+
+# Options: required any array values keys indent level
+sub elm_type {
+  my($o, %opt) = @_;
+  my $par = delete $opt{_need_parens} ? sub { "($_[0])" } : sub { $_[0] };
+  return $par->('Maybe ' . $o->elm_type(%opt, required => 1, _need_parens => 1)) if !$o->{required} && !defined $o->{default} && !$opt{required};
+  delete $opt{required};
+  return 'String' if $o->{type} eq 'scalar';
+  return 'Bool'   if $o->{type} eq 'bool';
+  return 'Float'  if $o->{type} eq 'num';
+  return 'Int'    if $o->{type} eq 'int';
+  return $opt{any} if $o->{type} eq 'any' && $opt{any};
+  return $par->( ($opt{array} || 'List') . ' ' . ($opt{values} || $o->{values}->elm_type(%opt, _need_parens => 1)) )
+    if $o->{type} eq 'array' && ($opt{values} || $o->{values});
+
+  if($o->{type} eq 'hash' && ($o->{keys} || $opt{keys})) {
+    $opt{indent} //= 2;
+    $opt{level}  //= 1;
+    my $len = 0;
+    $len = length $_ > $len ? length $_ : $len for keys %{$o->{keys}};
+
+    my $r = "\n{ " . join("\n, ", map {
+      sprintf "%-*s : %s", $len, $_, $opt{keys}{$_} || $o->{keys}{$_}->elm_type(%opt, level => $opt{level}+1);
+    } sort keys %{$o->{keys}}) . "\n}";;
+
+    $r =~ s/\n/$opt{indent} ? "\n" . (' 'x($opt{indent}*$opt{level})) : ''/eg;
+    return $r;
+  }
+
+  croak "Unknown type '$o->{type}' or missing option";
+}
+
+
+# Elm JSON encoder for values of elm_type()
+# options: elm_type() options + json_encode var_prefix
+sub elm_encoder {
+  my($o, %opt) = @_;
+  $opt{json_encode} //= '';
+  $opt{var_prefix} //= 'e';
+  $opt{var_num} //= 0;
+
+  return sprintf '(Maybe.withDefault %snull << Maybe.map %s)',
+    $opt{json_encode}, $opt{values} || $o->elm_encoder(%opt, required => 1)
+    if !$o->{required} && !defined $o->{default} && !$opt{required};
+
+  delete $opt{required};
+  return "$opt{json_encode}string" if $o->{type} eq 'scalar';
+  return "$opt{json_encode}bool"   if $o->{type} eq 'bool';
+  return "$opt{json_encode}float"  if $o->{type} eq 'num';
+  return "$opt{json_encode}int"    if $o->{type} eq 'int';
+  return $opt{any}                 if $o->{type} eq 'any' && $opt{any};
+  return sprintf '(%slist << List.map %s)', $opt{json_encode}, $opt{values} || $o->{values}->elm_encoder(%opt)
+    if $o->{type} eq 'array' && ($opt{values} || $o->{values});
+
+  if($o->{type} eq 'hash' && ($o->{keys} || $opt{keys})) {
+    $opt{indent} //= 2;
+    $opt{level}  //= 1;
+    my $len = 0;
+    $len = length $_ > $len ? length $_ : $len for keys %{$o->{keys}};
+
+    my $var = $opt{var_prefix}.$opt{var_num};
+    my $r = sprintf "(\\%s -> %sobject\n[ %s\n])", $var, $opt{json_encode}, join "\n, ", map {
+      sprintf '("%s",%s %s %s.%1$s)', $_,
+        ' 'x($len-(length $_)),
+        $opt{keys}{$_} || $o->{keys}{$_}->elm_encoder(%opt, level => $opt{level}+1, var_num => $opt{var_num}+1),
+        $var;
+    } sort keys %{$o->{keys}};
+
+    $r =~ s/\n/$opt{indent} ? "\n" . (' 'x($opt{indent}*$opt{level})) : ''/eg;
+    return $r;
+  }
+
+  croak "Unknown type '$o->{type}' or missing option";
 }
 
 1;
