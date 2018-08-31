@@ -576,6 +576,9 @@ L<mail()|TUWF::Misc>. Default: C<E<lt>noreply-yawf@blicky.netE<gt>>.
 The path to the C<sendmail> command, used by L<mail()|TUWF::Misc>. Default:
 C</usr/sbin/sendmail>.
 
+Can also be set to the string C<"log">, in which case the emails will be
+written to the TUWF log function instead of actually being sent.
+
 =item max_post_body
 
 Maximum length of the contents of POST requests, in bytes. This disallows

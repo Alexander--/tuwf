@@ -181,7 +181,9 @@ sub TUWF::Object::mail {
   }
   $mail .= sprintf "\n%s", $body;
 
-  if(open(my $mailer, '|-:utf8', "$self->{_TUWF}{mail_sendmail} -t -f '$hs{From}'")) {
+  if($self->{_TUWF}{mail_sendmail} eq 'log') {
+    $self->log("tuwf->mail(): The following mail would have been sent:\n$mail");
+  } elsif(open(my $mailer, '|-:utf8', "$self->{_TUWF}{mail_sendmail} -t -f '$hs{From}'")) {
     print $mailer $mail;
     croak "Error running sendmail ($!)"
       if !close($mailer);
