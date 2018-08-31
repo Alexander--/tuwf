@@ -108,11 +108,15 @@ sub json_type {
 
 
 # Attempts to convert a stringified Perl regex into something that is compatible with JS.
+# - @ should not be escaped
 # - (?^: is a perl alias for (?d-imnsx:
 # - Javascript doesn't officially support embedded modifiers in the first place, so these are removed
 # Regexes compiled with any of /imsx will not work properly.
 sub _re_compat {
-  $_[0] =~ s{\(\?\^?[alupimnsx]*(?:-[imnsx]+)?(?=[:\)])}{(?}gr;
+  local $_ = $_[0];
+  s/\\@/@/g;
+  s{\(\?\^?[alupimnsx]*(?:-[imnsx]+)?(?=[:\)])}{(?}g;
+  $_
 }
 
 
