@@ -228,7 +228,7 @@ sub TUWF::Object::validate {
   return _compile($_[1])->validate($source->{$_[0]}) if @_ == 2;
 
   # Multi-value, separate params
-  _comile({ @_ })->validate($source);
+  _compile({ type => 'hash', keys => { @_ } })->validate($source);
 }
 
 1;
